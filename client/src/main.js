@@ -7,8 +7,8 @@ import AsyncComputed from "vue-async-computed";
 import App from "./App.vue";
 import router from "./router";
 import store from "./store";
-import Girder, { RestClient, vuetifyConfig } from "@girder/components/src";
-import { API_URL, STATIC_PATH } from "./constants";
+import Girder, { vuetifyConfig } from "@girder/components/src";
+import { STATIC_PATH } from "./constants";
 
 import vMousetrap from "./vue-utilities/v-mousetrap";
 import snackbarService from "./vue-utilities/snackbar-service";
@@ -33,7 +33,7 @@ const vuetify = new Vuetify(vuetifyOptions);
 Vue.use(snackbarService(vuetify));
 Vue.use(promptService(vuetify));
 
-girder.rest = new RestClient({ apiRoot: API_URL });
+girder.rest = { user: null };
 
 import config from "itk/itkConfig";
 config.itkModulesPath = STATIC_PATH + config.itkModulesPath;
@@ -49,13 +49,15 @@ if (process.env.NODE_ENV === "production") {
   console.log = function() {};
 }
 
-girder.rest.fetchUser().then(user => {
+import djangoRest from "./django";
+
+djangoRest.restoreLogin().then(user => {
   new Vue({
     vuetify,
     router,
     store,
     render: h => h(App),
-    provide: { girderRest: girder.rest }
+    provide: { girderRest: girder.rest, djangoRest }
   })
     .$mount("#app")
     .$snackbarAttach()
