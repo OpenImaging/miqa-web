@@ -116,7 +116,7 @@ const store = new Vuex.Store({
     },
     firstDatasetInPreviousSession(state, getters) {
       return getters.currentDataset
-        ? getters.currentDataset.firstDatasetInPreviousSession
+        ? `${getters.currentDataset.firstDatasetInPreviousSession}`
         : null;
     },
     firstDatasetInNextSession(state, getters) {
