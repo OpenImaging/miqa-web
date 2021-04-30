@@ -15,6 +15,7 @@ import ITKHelper from "vtk.js/Sources/Common/DataModel/ITKHelper";
 import { proxy } from "../vtk";
 import { getView } from "../vtk/viewManager";
 import girder from "../girder";
+import djangoRest from "../django";
 
 const { convertItkToVtkImage } = ITKHelper;
 
@@ -250,33 +251,128 @@ const store = new Vuex.Store({
       const remainingTime = await girder.rest.get("miqa/sessiontime");
       commit("setRemainingSessionTime", remainingTime.data);
     },
-    startLoginMonitor({ state, commit, dispatch }) {
-      if (state.responseInterceptor === null) {
-        state.responseInterceptor = girder.rest.interceptors.response.use(
-          response => response,
-          error => {
-            if (state.currentUser !== null && error.response.status === 401) {
-              commit("setSessionStatus", "timeout");
-            } else {
-              return Promise.reject(error);
-            }
-          }
-        );
-
-        const checkUser = () => {
-          dispatch("requestCurrentUser");
-          sessionTimeoutId = window.setTimeout(
-            checkUser,
-            state.userCheckPeriod
-          );
-        };
-
-        checkUser();
-      }
+    startLoginMonitor() {
+      // startLoginMonitor({ state, commit, dispatch }) {
+      // TODO figure this out
+      // if (state.responseInterceptor === null) {
+      //   state.responseInterceptor = girder.rest.interceptors.response.use(
+      //     response => response,
+      //     error => {
+      //       if (state.currentUser !== null && error.response.status === 401) {
+      //         commit("setSessionStatus", "timeout");
+      //       } else {
+      //         return Promise.reject(error);
+      //       }
+      //     }
+      //   );
+      //
+      //   const checkUser = () => {
+      //     dispatch("requestCurrentUser");
+      //     sessionTimeoutId = window.setTimeout(
+      //       checkUser,
+      //       state.userCheckPeriod
+      //     );
+      //   };
+      //
+      //   checkUser();
+      // }
     },
     async loadSessions({ state }) {
-      let { data: sessionTree } = await girder.rest.get(`miqa/sessions`);
-
+      // let { data: sessionTree } = await girder.rest.get(`miqa/sessions`);
+      //
+      // state.experimentIds = [];
+      // state.experiments = {};
+      // state.experimentSessions = {};
+      // state.sessions = {};
+      // state.sessionDatasets = {};
+      // state.datasets = {};
+      //
+      // // Build navigation links throughout the dataset to improve performance.
+      // let firstInPrev = null;
+      //
+      // for (let i = 0; i < sessionTree.length; i++) {
+      //   let experiment = sessionTree[i];
+      //   let experimentId = experiment.folderId;
+      //
+      //   state.experimentIds.push(experimentId);
+      //   state.experiments[experimentId] = {
+      //     id: experimentId,
+      //     folderId: experimentId,
+      //     name: experiment.name,
+      //     index: i
+      //   };
+      //
+      //   let sessions = experiment.sessions.sort(
+      //     (a, b) => a.meta.scanId - b.meta.scanId
+      //   );
+      //
+      //   state.experimentSessions[experimentId] = [];
+      //
+      //   for (let j = 0; j < sessions.length; j++) {
+      //     let session = sessions[j];
+      //     let sessionId = session.folderId;
+      //
+      //     state.experimentSessions[experimentId].push(sessionId);
+      //     state.sessions[sessionId] = {
+      //       id: sessionId,
+      //       folderId: sessionId,
+      //       name: session.name,
+      //       meta: Object.assign({}, session.meta),
+      //       numDatasets: session.datasets.length,
+      //       cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE], // [null, null],
+      //       experiment: experimentId
+      //     };
+      //
+      //     state.sessionDatasets[sessionId] = [];
+      //
+      //     for (let k = 0; k < session.datasets.length; k++) {
+      //       let dataset = session.datasets[k];
+      //       let datasetId = dataset._id;
+      //
+      //       state.sessionDatasets[sessionId].push(datasetId);
+      //       state.datasets[datasetId] = Object.assign({}, dataset);
+      //       state.datasets[datasetId].session = sessionId;
+      //       state.datasets[datasetId].index = k;
+      //       state.datasets[datasetId].previousDataset =
+      //         k > 0 ? session.datasets[k - 1]._id : null;
+      //       state.datasets[datasetId].nextDataset =
+      //         k < session.datasets.length - 1
+      //           ? session.datasets[k + 1]._id
+      //           : null;
+      //       state.datasets[
+      //         datasetId
+      //       ].firstDatasetInPreviousSession = firstInPrev;
+      //     }
+      //     if (session.datasets.length > 0) {
+      //       firstInPrev = session.datasets[0]._id;
+      //     } else {
+      //       console.error(`${experiment.name}/${session.name} has no datasets`);
+      //     }
+      //   }
+      // }
+      //
+      // // Now iterate through the session tree backwards to build up the links
+      // // to the "firstInNext" datasets.
+      // let firstInNext = null;
+      //
+      // for (let i = sessionTree.length - 1; i >= 0; i--) {
+      //   let experiment = sessionTree[i];
+      //   for (let j = experiment.sessions.length - 1; j >= 0; j--) {
+      //     let session = experiment.sessions[j];
+      //     for (let k = session.datasets.length - 1; k >= 0; k--) {
+      //       let datasetId = session.datasets[k]._id;
+      //       let dataset = state.datasets[datasetId];
+      //       dataset.firstDatasetInNextSession = firstInNext;
+      //     }
+      //     if (session.datasets.length > 0) {
+      //       firstInNext = session.datasets[0]._id;
+      //     } else {
+      //       console.error(
+      //         `${experiment.name}/${session.name}) has no datasets`
+      //       );
+      //     }
+      //   }
+      // }
       state.experimentIds = [];
       state.experiments = {};
       state.experimentSessions = {};
@@ -287,85 +383,67 @@ const store = new Vuex.Store({
       // Build navigation links throughout the dataset to improve performance.
       let firstInPrev = null;
 
-      for (let i = 0; i < sessionTree.length; i++) {
-        let experiment = sessionTree[i];
-        let experimentId = experiment.folderId;
+      const sessions = await djangoRest.sessions();
+      // Just use the first session for now
+      const session = sessions[0];
 
-        state.experimentIds.push(experimentId);
-        state.experiments[experimentId] = {
-          id: experimentId,
-          folderId: experimentId,
+      const experiments = await djangoRest.experiments(session.id);
+      for (let i = 0; i < experiments.length; i++) {
+        const experiment = experiments[i];
+        // set experimentSessions[experiment.id] before registering the experiment.id so SessionsView doesn't update prematurely
+        state.experimentSessions[experiment.id] = [];
+        state.experimentIds.push(experiment.id);
+        state.experiments[experiment.id] = {
+          id: experiment.id,
           name: experiment.name,
           index: i
         };
 
-        let sessions = experiment.sessions.sort(
-          (a, b) => a.meta.scanId - b.meta.scanId
-        );
+        // Web sessions == Django scans
+        const scans = await djangoRest.scans(session.id, experiment.id);
+        for (let j = 0; j < scans.length; j++) {
+          const scan = scans[j];
+          state.sessionDatasets[scan.id] = [];
+          state.experimentSessions[experiment.id].push(scan.id);
 
-        state.experimentSessions[experimentId] = [];
+          // Web datasets == Django images
+          const images = await djangoRest.images(
+            session.id,
+            experiment.id,
+            scan.id
+          );
 
-        for (let j = 0; j < sessions.length; j++) {
-          let session = sessions[j];
-          let sessionId = session.folderId;
-
-          state.experimentSessions[experimentId].push(sessionId);
-          state.sessions[sessionId] = {
-            id: sessionId,
-            folderId: sessionId,
-            name: session.name,
-            meta: Object.assign({}, session.meta),
-            numDatasets: session.datasets.length,
-            cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE], // [null, null],
-            experiment: experimentId
+          state.sessions[scan.id] = {
+            id: scan.id,
+            name: scan.scan_type,
+            experiment: experiment.id,
+            cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE],
+            numDatasets: images.length,
+            site: scan.site
+            // folderId: sessionId,
+            // meta: Object.assign({}, session.meta),
           };
 
-          state.sessionDatasets[sessionId] = [];
-
-          for (let k = 0; k < session.datasets.length; k++) {
-            let dataset = session.datasets[k];
-            let datasetId = dataset._id;
-
-            state.sessionDatasets[sessionId].push(datasetId);
-            state.datasets[datasetId] = Object.assign({}, dataset);
-            state.datasets[datasetId].session = sessionId;
-            state.datasets[datasetId].index = k;
-            state.datasets[datasetId].previousDataset =
-              k > 0 ? session.datasets[k - 1]._id : null;
-            state.datasets[datasetId].nextDataset =
-              k < session.datasets.length - 1
-                ? session.datasets[k + 1]._id
-                : null;
+          for (let k = 0; k < images.length; k++) {
+            const image = images[k];
+            state.sessionDatasets[scan.id].push(image.id);
+            state.datasets[image.id] = Object.assign({}, image);
+            state.datasets[image.id].session = scan.id;
+            state.datasets[image.id].experiment = experiment.id;
+            state.datasets[image.id].index = k;
+            state.datasets[image.id].previousDataset =
+              k > 0 ? images[k - 1].id : null;
+            state.datasets[image.id].nextDataset =
+              k < images.length - 1 ? images[k + 1].id : null;
             state.datasets[
-              datasetId
+              image.id
             ].firstDatasetInPreviousSession = firstInPrev;
           }
-          if (session.datasets.length > 0) {
-            firstInPrev = session.datasets[0]._id;
-          } else {
-            console.error(`${experiment.name}/${session.name} has no datasets`);
-          }
-        }
-      }
-
-      // Now iterate through the session tree backwards to build up the links
-      // to the "firstInNext" datasets.
-      let firstInNext = null;
-
-      for (let i = sessionTree.length - 1; i >= 0; i--) {
-        let experiment = sessionTree[i];
-        for (let j = experiment.sessions.length - 1; j >= 0; j--) {
-          let session = experiment.sessions[j];
-          for (let k = session.datasets.length - 1; k >= 0; k--) {
-            let datasetId = session.datasets[k]._id;
-            let dataset = state.datasets[datasetId];
-            dataset.firstDatasetInNextSession = firstInNext;
-          }
-          if (session.datasets.length > 0) {
-            firstInNext = session.datasets[0]._id;
+          if (images.length > 0) {
+            firstInPrev = images[0].id;
           } else {
             console.error(
-              `${experiment.name}/${session.name}) has no datasets`
+              `${experiment.name}/${scan.scan_type} has no datasets`
             );
           }
         }
@@ -431,10 +509,16 @@ const store = new Vuex.Store({
       // This try catch and within logic are mainly for handling data doesn't exist issue
       try {
         let imageData = null;
-        if (datasetCache.has(dataset._id)) {
-          imageData = datasetCache.get(dataset._id).imageData;
+        if (datasetCache.has(dataset.id)) {
+          imageData = datasetCache.get(dataset.id).imageData;
         } else {
-          const result = await loadFileAndGetData(dataset._id);
+          const result = await loadFileAndGetData({
+            // TODO don't hardcode sessionId
+            sessionId: 1,
+            experimentId: dataset.experiment,
+            scanId: dataset.session,
+            imageId: dataset.id
+          });
           imageData = result.imageData;
         }
         sourceProxy.setInputData(imageData);
@@ -451,7 +535,7 @@ const store = new Vuex.Store({
         state.vtkViews = [];
         state.errorLoadingDataset = true;
       } finally {
-        state.currentDatasetId = dataset._id;
+        state.currentDatasetId = dataset.id;
         state.loadingDataset = false;
       }
 
@@ -459,8 +543,9 @@ const store = new Vuex.Store({
       checkLoadExperiment(oldExperiment, newExperiment);
     },
     async loadSites({ state }) {
-      let { data: sites } = await girder.rest.get("miqa_setting/site");
-      state.sites = sites;
+      console.log(state);
+      // let { data: sites } = await girder.rest.get("miqa_setting/site");
+      // state.sites = sites;
     }
   }
 });
@@ -491,7 +576,13 @@ function checkLoadExperiment(oldValue, newValue) {
   newExperimentSessions.forEach(sessionId => {
     const sessionDatasets = store.state.sessionDatasets[sessionId];
     sessionDatasets.forEach(datasetId => {
-      readDataQueue.push({ id: datasetId });
+      readDataQueue.push({
+        // TODO don't hardcode sessionId
+        sessionId: 1,
+        experimentId: newValue.id,
+        scanId: sessionId,
+        imageId: datasetId
+      });
     });
   });
   startReaderWorkerPool();
@@ -519,17 +610,17 @@ function shrinkProxyManager(proxyManager) {
   });
 }
 
-function loadFile(id) {
-  if (fileCache.has(id)) {
-    return { id, fileP: fileCache.get(id) };
+function loadFile({ sessionId, experimentId, scanId, imageId }) {
+  if (fileCache.has(imageId)) {
+    return { imageId, fileP: fileCache.get(imageId) };
   }
   let p = ReaderFactory.downloadDataset(
-    girder.rest,
+    djangoRest.apiClient,
     "nifti.nii.gz",
-    `/item/${id}/download`
+    `/sessions/${sessionId}/experiments/${experimentId}/scans/${scanId}/images/${imageId}/download`
   );
-  fileCache.set(id, p);
-  return { id, fileP: p };
+  fileCache.set(imageId, p);
+  return { imageId, fileP: p };
 }
 
 function getData(id, file, webWorker = null) {
@@ -568,26 +659,28 @@ function getData(id, file, webWorker = null) {
   });
 }
 
-function loadFileAndGetData(id) {
-  return loadFile(id).fileP.then(file => {
-    return getData(id, file, savedWorker)
-      .then(({ webWorker, imageData }) => {
-        savedWorker = webWorker;
-        return Promise.resolve({ imageData });
-      })
-      .catch(error => {
-        const msg = "loadFileAndGetData caught error getting data";
-        console.log(msg);
-        console.log(error);
-        return Promise.reject(msg);
-      })
-      .finally(() => {
-        if (savedWorker) {
-          savedWorker.terminate();
-          savedWorker = null;
-        }
-      });
-  });
+function loadFileAndGetData({ sessionId, experimentId, scanId, imageId }) {
+  return loadFile({ sessionId, experimentId, scanId, imageId }).fileP.then(
+    file => {
+      return getData(imageId, file, savedWorker)
+        .then(({ webWorker, imageData }) => {
+          savedWorker = webWorker;
+          return Promise.resolve({ imageData });
+        })
+        .catch(error => {
+          const msg = "loadFileAndGetData caught error getting data";
+          console.log(msg);
+          console.log(error);
+          return Promise.reject(msg);
+        })
+        .finally(() => {
+          if (savedWorker) {
+            savedWorker.terminate();
+            savedWorker = null;
+          }
+        });
+    }
+  );
 }
 
 function getArrayName(filename) {
@@ -598,24 +691,24 @@ function getArrayName(filename) {
 
 function poolFunction(webWorker, taskInfo) {
   return new Promise((resolve, reject) => {
-    const { id } = taskInfo;
+    const { sessionId, experimentId, scanId, imageId } = taskInfo;
 
     let filePromise = null;
 
-    if (fileCache.has(id)) {
-      filePromise = fileCache.get(id);
+    if (fileCache.has(imageId)) {
+      filePromise = fileCache.get(imageId);
     } else {
       filePromise = ReaderFactory.downloadDataset(
-        girder.rest,
+        djangoRest.apiClient,
         "nifti.nii.gz",
-        `/item/${id}/download`
+        `/sessions/${sessionId}/experiments/${experimentId}/scans/${scanId}/images/${imageId}/download`
       );
-      fileCache.set(id, filePromise);
+      fileCache.set(imageId, filePromise);
     }
 
     filePromise
       .then(file => {
-        resolve(getData(id, file, webWorker));
+        resolve(getData(imageId, file, webWorker));
       })
       .catch(err => {
         console.log("poolFunction: fileP error of some kind");
