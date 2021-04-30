@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@girder/components": "git+https://github.com/girder/girder_web_components.git#v3.0.2",
+    "@girder/oauth-client": "^0.7.7",
     "bluebird": "^3.5.5",
     "itk": "14.0.0",
     "mousetrap": "scottwittenburg/mousetrap#fix-listener-leak",
