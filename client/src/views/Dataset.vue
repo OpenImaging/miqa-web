@@ -533,7 +533,7 @@ export default {
                           Site
                         </v-col>
                         <v-col cols="9" class="pb-1 pt-0 justifyRight">
-                          {{ getSiteDisplayName(currentSession.meta.site) }}
+                          {{ getSiteDisplayName(currentSession.site) }}
                         </v-col>
                       </v-row>
                       <v-row>
@@ -543,10 +543,10 @@ export default {
                         <v-col cols="9" class="pb-1 pt-0 justifyRight">
                           <a
                             :href="
-                              `/xnat/app/action/DisplayItemAction/search_value/${currentSession.meta.experimentId}/search_element/  xnat:mrSessionData/      search_field/xnat:mrSessionData.ID`
+                              `/xnat/app/action/DisplayItemAction/search_value/${currentSession.experiment}/search_element/  xnat:mrSessionData/      search_field/xnat:mrSessionData.ID`
                             "
                             target="_blank"
-                            >{{ currentSession.meta.experimentId }}</a
+                            >{{ currentSession.experiment }}</a
                           >
                         </v-col>
                       </v-row>

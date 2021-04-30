@@ -3,7 +3,7 @@ import { mapActions, mapGetters } from "vuex";
 export default {
   name: "App",
   components: {},
-  inject: ["girderRest"],
+  inject: ["girderRest", "djangoRest"],
   provide() {
     return { userLevel: this.userLevel };
   },
@@ -14,11 +14,6 @@ export default {
     ...mapGetters(["sessionStatus"])
   },
   watch: {
-    "girderRest.user"(user) {
-      if (!user) {
-        this.$router.push("/login");
-      }
-    },
     sessionStatus(status) {
       if (status === "timeout") {
         this.$prompt({

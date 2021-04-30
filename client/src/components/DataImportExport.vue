@@ -14,11 +14,14 @@ export default {
     importErrors: false
   }),
   async created() {
-    var { data: result } = await this.girderRest.get(
-      "miqa_setting/import-export-enabled"
-    );
-    this.importEnabled = result.import;
-    this.exportEnabled = result.export;
+    // TODO figure out what this means for Django
+    // var { data: result } = await this.girderRest.get(
+    //   "miqa_setting/import-export-enabled"
+    // );
+    // this.importEnabled = result.import;
+    // this.exportEnabled = result.export;
+    this.importEnabled = true;
+    this.exportEnabled = true;
   },
   methods: {
     ...mapActions(["loadSessions"]),

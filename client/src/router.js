@@ -8,14 +8,7 @@ import Login from "./views/Login.vue";
 
 Vue.use(Router);
 
-function beforeEnter(to, from, next) {
-  if (!girder.rest.user) {
-    next("/login");
-  } else {
-    next();
-  }
-}
-
+// TODO figure this out
 function beforeEnterAdmin(to, from, next) {
   if (!girder.rest.user) {
     next("/login");
@@ -45,8 +38,7 @@ export default new Router({
     {
       path: "/:datasetId?",
       name: "dataset",
-      component: Dataset,
-      beforeEnter
+      component: Dataset
     },
     {
       path: "*",

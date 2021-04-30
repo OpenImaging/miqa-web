@@ -45,7 +45,7 @@ export default {
       return expSessionIds.map(sessionId => allSessions[sessionId]);
     },
     getIdOfFirstDatasetInSession(sessionId) {
-      return this.sessionDatasets[sessionId][0];
+      return `${this.sessionDatasets[sessionId][0]}`;
     },
     ratingToLabel(rating) {
       switch (rating) {
