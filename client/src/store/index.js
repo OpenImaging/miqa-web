@@ -400,18 +400,14 @@ const store = new Vuex.Store({
         };
 
         // Web sessions == Django scans
-        const scans = await djangoRest.scans(session.id, experiment.id);
+        const scans = await djangoRest.scans(experiment.id);
         for (let j = 0; j < scans.length; j++) {
           const scan = scans[j];
           state.sessionDatasets[scan.id] = [];
           state.experimentSessions[experiment.id].push(scan.id);
 
           // Web datasets == Django images
-          const images = await djangoRest.images(
-            session.id,
-            experiment.id,
-            scan.id
-          );
+          const images = await djangoRest.images(scan.id);
 
           state.sessions[scan.id] = {
             id: scan.id,
@@ -512,13 +508,7 @@ const store = new Vuex.Store({
         if (datasetCache.has(dataset.id)) {
           imageData = datasetCache.get(dataset.id).imageData;
         } else {
-          const result = await loadFileAndGetData({
-            // TODO don't hardcode sessionId
-            sessionId: 1,
-            experimentId: dataset.experiment,
-            scanId: dataset.session,
-            imageId: dataset.id
-          });
+          const result = await loadFileAndGetData(dataset.id);
           imageData = result.imageData;
         }
         sourceProxy.setInputData(imageData);
@@ -610,14 +600,14 @@ function shrinkProxyManager(proxyManager) {
   });
 }
 
-function loadFile({ sessionId, experimentId, scanId, imageId }) {
+function loadFile(imageId) {
   if (fileCache.has(imageId)) {
     return { imageId, fileP: fileCache.get(imageId) };
   }
   let p = ReaderFactory.downloadDataset(
     djangoRest.apiClient,
     "nifti.nii.gz",
-    `/sessions/${sessionId}/experiments/${experimentId}/scans/${scanId}/images/${imageId}/download`
+    `/images/${imageId}/download`
   );
   fileCache.set(imageId, p);
   return { imageId, fileP: p };
@@ -659,28 +649,26 @@ function getData(id, file, webWorker = null) {
   });
 }
 
-function loadFileAndGetData({ sessionId, experimentId, scanId, imageId }) {
-  return loadFile({ sessionId, experimentId, scanId, imageId }).fileP.then(
-    file => {
-      return getData(imageId, file, savedWorker)
-        .then(({ webWorker, imageData }) => {
-          savedWorker = webWorker;
-          return Promise.resolve({ imageData });
-        })
-        .catch(error => {
-          const msg = "loadFileAndGetData caught error getting data";
-          console.log(msg);
-          console.log(error);
-          return Promise.reject(msg);
-        })
-        .finally(() => {
-          if (savedWorker) {
-            savedWorker.terminate();
-            savedWorker = null;
-          }
-        });
-    }
-  );
+function loadFileAndGetData(imageId) {
+  return loadFile(imageId).fileP.then(file => {
+    return getData(imageId, file, savedWorker)
+      .then(({ webWorker, imageData }) => {
+        savedWorker = webWorker;
+        return Promise.resolve({ imageData });
+      })
+      .catch(error => {
+        const msg = "loadFileAndGetData caught error getting data";
+        console.log(msg);
+        console.log(error);
+        return Promise.reject(msg);
+      })
+      .finally(() => {
+        if (savedWorker) {
+          savedWorker.terminate();
+          savedWorker = null;
+        }
+      });
+  });
 }
 
 function getArrayName(filename) {
@@ -691,7 +679,7 @@ function getArrayName(filename) {
 
 function poolFunction(webWorker, taskInfo) {
   return new Promise((resolve, reject) => {
-    const { sessionId, experimentId, scanId, imageId } = taskInfo;
+    const { imageId } = taskInfo;
 
     let filePromise = null;
 
@@ -701,7 +689,7 @@ function poolFunction(webWorker, taskInfo) {
       filePromise = ReaderFactory.downloadDataset(
         djangoRest.apiClient,
         "nifti.nii.gz",
-        `/sessions/${sessionId}/experiments/${experimentId}/scans/${scanId}/images/${imageId}/download`
+        `/images/${imageId}/download`
       );
       fileCache.set(imageId, filePromise);
     }
