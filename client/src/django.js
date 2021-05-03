@@ -47,6 +47,10 @@ const djangoClient = new Vue({
       const { results } = data;
       return results;
     },
+    async scan(scanId) {
+      const { data } = await apiClient.get(`/scans/${scanId}`);
+      return data;
+    },
     async images(scanId) {
       const { data } = await apiClient.get("/images", {
         params: { scan: scanId }
