@@ -80,7 +80,7 @@ export default {
       this.toCandidates = [];
       this.ccCandidates = [];
       this.bccCandidates = [];
-      var site = this.siteMap[this.currentSession.meta.site];
+      var site = this.siteMap[this.currentSession.site];
       if (site && site.meta) {
         for (let key in site.meta) {
           if (_.isArray(site.meta[key])) {
@@ -108,9 +108,9 @@ export default {
       }
       this.showCC = !!this.cc.length;
       this.showBCC = !!this.bcc.length;
-      var experiment = `Regarding ${this.currentSession.meta.experimentId}, ${this.currentSession.name}`;
+      var experiment = `Regarding ${this.currentSession.experiment}, ${this.currentSession.name}`;
       this.subject = experiment;
-      this.body = `Experiment: ${this.currentSession.meta.experimentId}
+      this.body = `Experiment: ${this.currentSession.experiment}
 Scan: ${this.currentSession.name}`;
       if (this.note) {
         this.body = `${this.body}

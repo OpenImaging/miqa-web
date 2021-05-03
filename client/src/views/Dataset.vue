@@ -87,8 +87,8 @@ export default {
       // TODO: does not appear in the UI.  We need to figure out how to fix
       // TODO: this properly.
       this.noteLastSaveTime;
-      if (this.currentSession && this.currentSession.meta) {
-        return this.currentSession.meta.note;
+      if (this.currentSession) {
+        return this.currentSession.note;
       } else {
         return "";
       }
