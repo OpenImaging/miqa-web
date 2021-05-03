@@ -34,23 +34,23 @@ const djangoClient = new Vue({
       return results;
     },
     async experiments(sessionId) {
-      const { data } = await apiClient.get(
-        `/sessions/${sessionId}/experiments`
-      );
+      const { data } = await apiClient.get("/experiments", {
+        params: { session: sessionId }
+      });
       const { results } = data;
       return results;
     },
-    async scans(sessionId, experimendId) {
-      const { data } = await apiClient.get(
-        `/sessions/${sessionId}/experiments/${experimendId}/scans`
-      );
+    async scans(experimendId) {
+      const { data } = await apiClient.get("/scans", {
+        params: { experiment: experimendId }
+      });
       const { results } = data;
       return results;
     },
-    async images(sessionId, experimendId, scanId) {
-      const { data } = await apiClient.get(
-        `/sessions/${sessionId}/experiments/${experimendId}/scans/${scanId}/images`
-      );
+    async images(scanId) {
+      const { data } = await apiClient.get("/images", {
+        params: { scan: scanId }
+      });
       const { results } = data;
       return results;
     },
