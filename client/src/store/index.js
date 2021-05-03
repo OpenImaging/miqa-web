@@ -470,6 +470,33 @@ const store = new Vuex.Store({
         }
       }
     },
+    // This would be called reloadSession, but session is being renamed to scan
+    async reloadScan({ commit, getters }) {
+      const currentImage = getters.currentDataset;
+      if (!currentImage) {
+        return;
+      }
+      const scanId = currentImage.session;
+      if (!scanId) {
+        return;
+      }
+      let scan = await djangoRest.scan(scanId);
+      let images = await djangoRest.images(scanId);
+      commit("setScan", {
+        scanId: scan.id,
+        scan: {
+          id: scan.id,
+          name: scan.scan_type,
+          experiment: scan.experiment,
+          cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE],
+          numDatasets: images.length,
+          site: scan.site,
+          note: scan.note,
+          decision: scan.decision,
+          rating: decisionToRating(scan.decision)
+        }
+      });
+    },
     async setCurrentImage({ commit, dispatch }, imageId) {
       commit("setCurrentImageId", imageId);
       if (imageId) {
