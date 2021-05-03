@@ -470,7 +470,13 @@ const store = new Vuex.Store({
         }
       }
     },
-    async swapToDataset({ state, getters }, dataset) {
+    async setCurrentImage({ commit, dispatch }, imageId) {
+      commit("setCurrentImageId", imageId);
+      if (imageId) {
+        dispatch("reloadScan");
+      }
+    },
+    async swapToDataset({ state, dispatch, getters }, dataset) {
       if (!dataset) {
         throw new Error(`dataset id doesn't exist`);
       }
