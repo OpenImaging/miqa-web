@@ -31,6 +31,19 @@ let taskRunId = -1;
 let savedWorker = null;
 let sessionTimeoutId = null;
 
+function decisionToRating(decision) {
+  switch (decision) {
+    case "GOOD":
+      return "good";
+    case "USABLE_EXTRA":
+      return "usableExtra";
+    case "BAD":
+      return "bad";
+    case "NONE":
+      return "";
+  }
+}
+
 const store = new Vuex.Store({
   state: {
     currentUser: null,
@@ -419,7 +432,10 @@ const store = new Vuex.Store({
             experiment: experiment.id,
             cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE],
             numDatasets: images.length,
-            site: scan.site
+            site: scan.site,
+            note: scan.note,
+            decision: scan.decision,
+            rating: decisionToRating(scan.decision)
             // folderId: sessionId,
             // meta: Object.assign({}, session.meta),
           };
