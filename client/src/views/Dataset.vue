@@ -126,12 +126,10 @@ export default {
     }
   },
   watch: {
-    currentSession(session, oldSession) {
-      if (session === oldSession) {
-        return;
-      }
+    currentSession(session) {
       if (session) {
-        this.loadSessionMeta();
+        this.rating = session.rating;
+        // TODO this.reviewer should also be set here
       }
     }
   },
@@ -149,7 +147,13 @@ export default {
   },
   methods: {
     ...mapMutations(["setDrawer"]),
-    ...mapActions(["loadSessions", "loadSites", "logout", "swapToDataset"]),
+    ...mapActions([
+      "loadSessions",
+      "reloadScan",
+      "loadSites",
+      "logout",
+      "swapToDataset"
+    ]),
     cleanDatasetName,
     handleNavigationError(fail) {
       let failureType = "unknown";
@@ -178,18 +182,6 @@ export default {
         });
       }
       return Promise.resolve(true);
-    },
-    // Load from the server again to get the latest
-    async loadSessionMeta() {
-      this.reviewChanged = false;
-      var { data: folder } = await this.girderRest.get(
-        `folder/${this.currentSession.folderId}`
-      );
-      var { meta } = folder;
-      this.newNote = "";
-      this.rating = folder.meta.rating;
-      this.reviewer = folder.meta.reviewer;
-      this.currentSession.meta = meta;
     },
     async save() {
       var user = this.girderRest.user;
@@ -638,7 +630,7 @@ export default {
                           class="my-0"
                           :disabled="!reviewChanged"
                           v-on="on"
-                          @click="loadSessionMeta"
+                          @click="reloadScan"
                         >
                           <v-icon>undo</v-icon>
                         </v-btn>
