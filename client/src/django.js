@@ -40,9 +40,9 @@ const djangoClient = new Vue({
       const { results } = data;
       return results;
     },
-    async scans(experimendId) {
+    async scans(experimentId) {
       const { data } = await apiClient.get("/scans", {
-        params: { experiment: experimendId }
+        params: { experiment: experimentId }
       });
       const { results } = data;
       return results;
