@@ -192,6 +192,11 @@ const store = new Vuex.Store({
     setCurrentImageId(state, imageId) {
       state.currentDatasetId = imageId;
     },
+    setScan(state, { scanId, scan }) {
+      // Replace with a new object to trigger a Vuex update
+      state.sessions = { ...state.sessions };
+      state.sessions[scanId] = scan;
+    },
     setSessionStatus(state, status) {
       state.sessionStatus = status;
     },
@@ -545,7 +550,7 @@ const store = new Vuex.Store({
         state.vtkViews = [];
         state.errorLoadingDataset = true;
       } finally {
-        state.currentDatasetId = dataset.id;
+        dispatch("setCurrentImage", dataset.id);
         state.loadingDataset = false;
       }
 
