@@ -176,6 +176,9 @@ const store = new Vuex.Store({
     }
   },
   mutations: {
+    setCurrentImageId(state, imageId) {
+      state.currentDatasetId = imageId;
+    },
     setSessionStatus(state, status) {
       state.sessionStatus = status;
     },
@@ -202,7 +205,7 @@ const store = new Vuex.Store({
     }
   },
   actions: {
-    reset({ state }) {
+    reset({ state, commit }) {
       if (sessionTimeoutId !== null) {
         window.clearTimeout(sessionTimeoutId);
         sessionTimeoutId = null;
@@ -218,6 +221,7 @@ const store = new Vuex.Store({
         taskRunId = -1;
       }
 
+      // TODO replace this with a reset mutation
       state.currentUser = null;
       state.drawer = false;
       state.experimentIds = [];
@@ -228,7 +232,7 @@ const store = new Vuex.Store({
       state.datasets = {};
       state.proxyManager = null;
       state.vtkViews = [];
-      state.currentDatasetId = null;
+      commit("setCurrentImageId", null);
       state.loadingDataset = false;
       state.errorLoadingDataset = false;
       state.loadingExperiment = false;
