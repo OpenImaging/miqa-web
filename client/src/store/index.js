@@ -31,6 +31,19 @@ let taskRunId = -1;
 let savedWorker = null;
 let sessionTimeoutId = null;
 
+function decisionToRating(decision) {
+  switch (decision) {
+    case "GOOD":
+      return "good";
+    case "USABLE_EXTRA":
+      return "usableExtra";
+    case "BAD":
+      return "bad";
+    case "NONE":
+      return "";
+  }
+}
+
 const store = new Vuex.Store({
   state: {
     currentUser: null,
@@ -176,6 +189,14 @@ const store = new Vuex.Store({
     }
   },
   mutations: {
+    setCurrentImageId(state, imageId) {
+      state.currentDatasetId = imageId;
+    },
+    setScan(state, { scanId, scan }) {
+      // Replace with a new object to trigger a Vuex update
+      state.sessions = { ...state.sessions };
+      state.sessions[scanId] = scan;
+    },
     setSessionStatus(state, status) {
       state.sessionStatus = status;
     },
@@ -202,7 +223,7 @@ const store = new Vuex.Store({
     }
   },
   actions: {
-    reset({ state }) {
+    reset({ state, commit }) {
       if (sessionTimeoutId !== null) {
         window.clearTimeout(sessionTimeoutId);
         sessionTimeoutId = null;
@@ -218,6 +239,7 @@ const store = new Vuex.Store({
         taskRunId = -1;
       }
 
+      // TODO replace this with a reset mutation
       state.currentUser = null;
       state.drawer = false;
       state.experimentIds = [];
@@ -228,7 +250,7 @@ const store = new Vuex.Store({
       state.datasets = {};
       state.proxyManager = null;
       state.vtkViews = [];
-      state.currentDatasetId = null;
+      commit("setCurrentImageId", null);
       state.loadingDataset = false;
       state.errorLoadingDataset = false;
       state.loadingExperiment = false;
@@ -415,7 +437,10 @@ const store = new Vuex.Store({
             experiment: experiment.id,
             cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE],
             numDatasets: images.length,
-            site: scan.site
+            site: scan.site,
+            note: scan.note,
+            decision: scan.decision,
+            rating: decisionToRating(scan.decision)
             // folderId: sessionId,
             // meta: Object.assign({}, session.meta),
           };
@@ -445,7 +470,40 @@ const store = new Vuex.Store({
         }
       }
     },
-    async swapToDataset({ state, getters }, dataset) {
+    // This would be called reloadSession, but session is being renamed to scan
+    async reloadScan({ commit, getters }) {
+      const currentImage = getters.currentDataset;
+      if (!currentImage) {
+        return;
+      }
+      const scanId = currentImage.session;
+      if (!scanId) {
+        return;
+      }
+      let scan = await djangoRest.scan(scanId);
+      let images = await djangoRest.images(scanId);
+      commit("setScan", {
+        scanId: scan.id,
+        scan: {
+          id: scan.id,
+          name: scan.scan_type,
+          experiment: scan.experiment,
+          cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE],
+          numDatasets: images.length,
+          site: scan.site,
+          note: scan.note,
+          decision: scan.decision,
+          rating: decisionToRating(scan.decision)
+        }
+      });
+    },
+    async setCurrentImage({ commit, dispatch }, imageId) {
+      commit("setCurrentImageId", imageId);
+      if (imageId) {
+        dispatch("reloadScan");
+      }
+    },
+    async swapToDataset({ state, dispatch, getters }, dataset) {
       if (!dataset) {
         throw new Error(`dataset id doesn't exist`);
       }
@@ -525,7 +583,7 @@ const store = new Vuex.Store({
         state.vtkViews = [];
         state.errorLoadingDataset = true;
       } finally {
-        state.currentDatasetId = dataset.id;
+        dispatch("setCurrentImage", dataset.id);
         state.loadingDataset = false;
       }
 
