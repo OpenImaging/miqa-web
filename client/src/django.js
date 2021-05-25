@@ -51,6 +51,18 @@ const djangoClient = new Vue({
       const { data } = await apiClient.get(`/scans/${scanId}`);
       return data;
     },
+    async setDecision(scanId, decision) {
+      await apiClient.post(`/scans/${scanId}/decision`, { decision });
+    },
+    async addScanNote(scanId, note) {
+      await apiClient.post("/scan_notes", {
+        scan: scanId,
+        note
+      });
+    },
+    async setScanNote(scanNoteId, note) {
+      await apiClient.put(`/scan_notes/${scanNoteId}`, { note });
+    },
     async images(scanId) {
       const { data } = await apiClient.get("/images", {
         params: { scan: scanId }
