@@ -15,9 +15,9 @@ export default {
       type: Boolean,
       required: true
     },
-    note: {
-      type: String,
-      default: ""
+    notes: {
+      type: Array,
+      default: () => []
     }
   },
   data: () => ({
@@ -61,7 +61,7 @@ export default {
         this.initialize();
       }
     },
-    note(value) {
+    notes(value) {
       if (value) {
         this.initialize();
       }
@@ -112,11 +112,16 @@ export default {
       this.subject = experiment;
       this.body = `Experiment: ${this.currentSession.experiment}
 Scan: ${this.currentSession.name}`;
-      if (this.note) {
+      if (this.notes) {
         this.body = `${this.body}
-Note:
-${this.note}
+Notes:`;
+        for (let i = 0; i < this.notes.length; i++) {
+          let note = this.notes[i];
+          this.body = `${this.body}
+${note.creator.first_name} ${note.creator.last_name}: ${note.created}
+${note.note}
 `;
+        }
       }
       this.initialized = true;
     },

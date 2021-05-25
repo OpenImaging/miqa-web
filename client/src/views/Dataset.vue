@@ -78,7 +78,7 @@ export default {
     currentSessionDatasets() {
       return this.sessionDatasets[this.currentSession.id];
     },
-    note() {
+    notes() {
       // TODO: This reference to the "lastNoteSaveTime" is here purely to get
       // TODO: vue to re-compute the note property, since it does not naturally
       // TODO: react to the changed "meta.note" property in the currentSession.
@@ -88,24 +88,15 @@ export default {
       // TODO: this properly.
       this.noteLastSaveTime;
       if (this.currentSession) {
-        return this.currentSession.note;
-      } else {
-        return "";
-      }
-    },
-    noteSegments() {
-      if (this.currentSession && this.note) {
-        return this.note.split(/[\r\n]+/g);
+        return this.currentSession.notes;
       } else {
         return [];
       }
     },
     lastNoteTruncated() {
-      const segments = this.noteSegments;
-      if (segments.length > 0) {
-        const lastSeg = segments.slice(-1)[0];
-        console.log(`last note: ${lastSeg}`);
-        return `${lastSeg.substring(0, 32)}...`;
+      if (this.notes.length > 0) {
+        const lastNote = this.notes.slice(-1)[0];
+        return `${lastNote.note.substring(0, 32)}...`;
       }
       return "";
     }
@@ -573,7 +564,7 @@ export default {
                           text
                           small
                           icon
-                          :disabled="noteSegments.length < 1"
+                          :disabled="notes.length < 1"
                           class="ma-0"
                           v-on="on"
                           v-mousetrap="{
@@ -771,7 +762,7 @@ export default {
       </v-card>
     </v-dialog>
     <ScreenshotDialog />
-    <EmailDialog v-model="emailDialog" :note="note" />
+    <EmailDialog v-model="emailDialog" :notes="notes" />
     <KeyboardShortcutDialog v-model="keyboardShortcutDialog" />
   </v-layout>
 </template>

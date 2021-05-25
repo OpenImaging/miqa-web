@@ -438,7 +438,7 @@ const store = new Vuex.Store({
             cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE],
             numDatasets: images.length,
             site: scan.site,
-            note: scan.note,
+            notes: scan.notes,
             decision: scan.decision,
             rating: decisionToRating(scan.decision)
             // folderId: sessionId,
@@ -491,7 +491,7 @@ const store = new Vuex.Store({
           cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE],
           numDatasets: images.length,
           site: scan.site,
-          note: scan.note,
+          notes: scan.notes,
           decision: scan.decision,
           rating: decisionToRating(scan.decision)
         }
