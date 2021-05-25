@@ -64,4 +64,17 @@ const djangoClient = new Vue({
   }
 });
 
+// This is done with an interceptor because the value of
+// oauthClient.authHeaders is initialized asynchronously,
+// and doesn't exist at all if the user isn't logged in.
+// Using client.defaults.headers.common.Authorization = ...
+// would not update when the headers do.
+apiClient.interceptors.request.use(config => ({
+  ...config,
+  headers: {
+    ...oauthClient.authHeaders,
+    ...config.headers
+  }
+}));
+
 export default djangoClient;
