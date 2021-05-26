@@ -45,7 +45,7 @@ export default {
     unsavedDialogResolve: null,
     emailDialog: false,
     editingNoteDialog: false,
-    editingNote: "",
+    editingNotes: [],
     showNotePopup: false,
     keyboardShortcutDialog: false,
     scanning: false,
@@ -181,21 +181,23 @@ export default {
     },
     enableEditHistroy() {
       this.editingNoteDialog = true;
-      this.editingNote = this.note;
+      this.editingNotes = [];
+      for (let i = 0; i < this.notes.length; i++) {
+        let note = this.notes[i];
+        this.editingNotes.push(note.note);
+      }
     },
     async saveNoteHistory() {
-      var meta = {
-        ...this.currentSession.meta,
-        ...{
-          note: this.editingNote
+      for (let i = 0; i < this.editingNotes.length; i++) {
+        let editingNote = this.editingNotes[i];
+        let note = this.notes[i];
+        if (editingNote !== note.note) {
+          await this.djangoRest.setScanNote(note.id, editingNote);
         }
-      };
-      await this.girderRest.put(
-        `folder/${this.currentSession.folderId}/metadata?allowNull=true`,
-        meta
-      );
-      this.currentSession.meta = meta;
+      }
       this.editingNoteDialog = false;
+      this.editingNotes = [];
+      this.reloadScan();
     },
     async unsavedDialogYes() {
       await this.save();
@@ -523,7 +525,6 @@ export default {
                     <v-menu
                       v-model="showNotePopup"
                       :close-on-content-click="false"
-                      :nudge-right="250"
                       offset-y
                       open-on-hover
                       top
@@ -546,9 +547,15 @@ export default {
                         >
                       </template>
                       <v-card>
-                        <v-card-text class="note-history">
-                          <pre>{{ note }}</pre>
-                        </v-card-text>
+                        <v-list-item v-for="note in notes" :key="note.id">
+                          <v-list-item-content class="note-history">
+                            <v-list-item-title class="grey--text darken-2">
+                              {{ note.creator.first_name }}
+                              {{ note.creator.last_name }}: {{ note.created }}
+                            </v-list-item-title>
+                            {{ note.note }}
+                          </v-list-item-content>
+                        </v-list-item>
                       </v-card>
                     </v-menu>
                   </v-col>
@@ -712,16 +719,21 @@ export default {
     </v-dialog>
     <v-dialog v-model="editingNoteDialog" max-width="600">
       <v-card>
-        <v-card-text>
-          <v-textarea
-            label="Edit note history"
-            filled
-            hide-details
-            no-resize
-            :rows="12"
-            v-model.lazy="editingNote"
-          ></v-textarea
-        ></v-card-text>
+        <v-list-item v-for="(note, i) in notes" :key="note.id">
+          <v-list-item-content>
+            <v-list-item-title class="grey--text darken-2">
+              {{ note.creator.first_name }}
+              {{ note.creator.last_name }}: {{ note.created }}
+            </v-list-item-title>
+            <v-textarea
+              label="Edit note"
+              filled
+              hide-details
+              no-resize
+              v-model="editingNotes[i]"
+            />
+          </v-list-item-content>
+        </v-list-item>
         <v-card-actions>
           <v-spacer />
           <v-btn text color="primary" @click="saveNoteHistory">
@@ -816,15 +828,9 @@ export default {
   }
 }
 
-.v-card__text.note-history {
+.v-list-item__content.note-history {
   width: 500px;
   max-height: 400px;
   overflow-y: auto;
-
-  pre {
-    white-space: pre-wrap;
-    font-family: inherit;
-    overflow-y: auto;
-  }
 }
 </style>
