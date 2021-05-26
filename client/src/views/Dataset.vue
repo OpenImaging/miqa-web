@@ -38,9 +38,9 @@ export default {
   inject: ["girderRest", "userLevel"],
   data: () => ({
     newNote: "",
-    rating: null,
     reviewer: "",
-    reviewChanged: false,
+    decision: null,
+    decisionChanged: false,
     unsavedDialog: false,
     unsavedDialogResolve: null,
     emailDialog: false,
@@ -119,8 +119,8 @@ export default {
   watch: {
     currentSession(session) {
       if (session) {
-        this.rating = session.rating;
-        // TODO this.reviewer should also be set here
+        this.decision = session.decision;
+        this.decisionChanged = false;
       }
     }
   },
@@ -165,7 +165,7 @@ export default {
       if (
         currentDataset &&
         (!toDataset || toDataset.folderId !== this.currentDataset.folderId) &&
-        this.reviewChanged
+        this.decisionChanged
       ) {
         this.unsavedDialog = true;
         return await new Promise(resolve => {
@@ -238,19 +238,19 @@ export default {
       this.unsavedDialogResolve(false);
       this.unsavedDialog = false;
     },
-    setRating(rating) {
-      if (rating !== this.rating) {
-        this.rating = rating;
-        this.ratingChanged();
+    setDecision(decision) {
+      if (decision !== this.decision) {
+        this.decision = decision;
+        this.onDecisionChanged();
       }
     },
     setNote(e) {
       this.newNote = e;
-      this.reviewChanged = true;
+      this.decisionChanged = true;
     },
-    async ratingChanged() {
-      if (!this.rating) {
-        this.reviewChanged = true;
+    async onDecisionChanged() {
+      if (this.decision != this.currentSession.decision) {
+        this.decisionChanged = true;
         return;
       }
       await this.save();
@@ -619,7 +619,7 @@ export default {
                           small
                           color="grey"
                           class="my-0"
-                          :disabled="!reviewChanged"
+                          :disabled="!decisionChanged"
                           v-on="on"
                           @click="reloadScan"
                         >
@@ -639,8 +639,8 @@ export default {
                   <v-col cols="6" class="pb-1 pt-0">
                     <v-btn-toggle
                       class="buttons"
-                      v-model="rating"
-                      @change="ratingChanged"
+                      v-model="decision"
+                      @change="onDecisionChanged"
                     >
                       <v-btn
                         text
@@ -650,7 +650,7 @@ export default {
                         :disabled="!newNote && !note"
                         v-mousetrap="{
                           bind: 'b',
-                          handler: () => setRating('bad')
+                          handler: () => setDecision('BAD')
                         }"
                         >Bad</v-btn
                       >
@@ -661,7 +661,7 @@ export default {
                         color="green"
                         v-mousetrap="{
                           bind: 'g',
-                          handler: () => setRating('good')
+                          handler: () => setDecision('GOOD')
                         }"
                         >Good</v-btn
                       >
@@ -672,7 +672,7 @@ export default {
                         color="light-green"
                         v-mousetrap="{
                           bind: 'u',
-                          handler: () => setRating('usableExtra')
+                          handler: () => setDecision('USABLE_EXTRA')
                         }"
                         >Extra</v-btn
                       >
@@ -684,9 +684,7 @@ export default {
                       class="ma-0"
                       style="height: 36px"
                       small
-                      :disabled="
-                        !reviewChanged || rating === null || rating === ''
-                      "
+                      :disabled="!decisionChanged && !newNote"
                       @click="save"
                       v-mousetrap="{ bind: 'alt+s', handler: save }"
                     >
