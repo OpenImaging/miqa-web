@@ -35,7 +35,7 @@ export default {
     NavigationTabs,
     SessionTimer
   },
-  inject: ["girderRest", "userLevel"],
+  inject: ["djangoRest", "userLevel"],
   data: () => ({
     newNote: "",
     reviewer: "",
@@ -166,35 +166,18 @@ export default {
       return Promise.resolve(true);
     },
     async save() {
-      var user = this.girderRest.user;
-      var initial =
-        user.firstName.charAt(0).toLocaleUpperCase() +
-        user.lastName.charAt(0).toLocaleUpperCase();
-      var date = new Date().toISOString().slice(0, 10);
-      var note = "";
       if (this.newNote.trim()) {
-        note =
-          (this.note ? this.note + "\n" : "") +
-          `${initial}(${date}): ${this.newNote}`;
-      } else {
-        note = this.note;
+        await this.djangoRest.addScanNote(this.currentSession.id, this.newNote);
+        this.newNote = "";
       }
-      var meta = {
-        ...this.currentSession.meta,
-        ...{
-          note,
-          rating: this.rating !== undefined ? this.rating : null,
-          reviewer: user.firstName + " " + user.lastName
-        }
-      };
-      await this.girderRest.put(
-        `folder/${this.currentSession.folderId}/metadata?allowNull=true`,
-        meta
-      );
-      this.newNote = "";
-      this.currentSession.meta = meta;
-      this.reviewer = meta.reviewer;
-      this.reviewChanged = false;
+      if (this.decisionChanged) {
+        await this.djangoRest.setDecision(
+          this.currentSession.id,
+          this.decision
+        );
+        this.decisionChanged = false;
+      }
+      this.reloadScan();
     },
     enableEditHistroy() {
       this.editingNoteDialog = true;
@@ -242,7 +225,6 @@ export default {
         this.decisionChanged = true;
         return;
       }
-      await this.save();
       if (this.firstDatasetInNextSession) {
         var currentDatasetId = this.currentDatasetId;
         this.$router
