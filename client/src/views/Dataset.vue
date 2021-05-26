@@ -38,7 +38,6 @@ export default {
   inject: ["djangoRest", "userLevel"],
   data: () => ({
     newNote: "",
-    reviewer: "",
     decision: null,
     decisionChanged: false,
     unsavedDialog: false,
@@ -112,6 +111,7 @@ export default {
       if (session) {
         this.decision = session.decision;
         this.decisionChanged = false;
+        this.newNote = null;
       }
     }
   },
