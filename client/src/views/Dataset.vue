@@ -616,9 +616,9 @@ export default {
                       <v-btn
                         text
                         small
-                        value="bad"
+                        value="BAD"
                         color="red"
-                        :disabled="!newNote && !note"
+                        :disabled="!newNote && !notes"
                         v-mousetrap="{
                           bind: 'b',
                           handler: () => setDecision('BAD')
@@ -628,7 +628,7 @@ export default {
                       <v-btn
                         text
                         small
-                        value="good"
+                        value="GOOD"
                         color="green"
                         v-mousetrap="{
                           bind: 'g',
@@ -639,7 +639,7 @@ export default {
                       <v-btn
                         text
                         small
-                        value="usableExtra"
+                        value="USABLE_EXTRA"
                         color="light-green"
                         v-mousetrap="{
                           bind: 'u',
