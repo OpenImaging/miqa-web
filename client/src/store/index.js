@@ -167,20 +167,25 @@ const store = new Vuex.Store({
       if (!state.sites) {
         return {};
       } else {
-        return _.keyBy(state.sites, "name");
+        return _.keyBy(state.sites, "id");
       }
     },
     getSiteDisplayName(state, getters) {
-      return function(name) {
+      return function(id) {
         var siteMap = getters.siteMap;
-        if (
-          siteMap[name] &&
-          siteMap[name].meta &&
-          siteMap[name].meta.displayName
-        ) {
-          return siteMap[name].meta.displayName;
+        if (siteMap[id]) {
+          return siteMap[id].name;
         } else {
-          return name;
+          return id;
+        }
+      };
+    },
+    getExperimentDisplayName(state) {
+      return function(id) {
+        if (state.experiments[id]) {
+          return state.experiments[id].name;
+        } else {
+          return id;
         }
       };
     },
@@ -591,9 +596,9 @@ const store = new Vuex.Store({
       checkLoadExperiment(oldExperiment, newExperiment);
     },
     async loadSites({ state }) {
-      console.log(state);
+      const sites = await djangoRest.sites();
       // let { data: sites } = await girder.rest.get("miqa_setting/site");
-      // state.sites = sites;
+      state.sites = sites;
     }
   }
 });

@@ -73,7 +73,8 @@ export default {
       "previousDataset",
       "firstDatasetInPreviousSession",
       "firstDatasetInNextSession",
-      "getSiteDisplayName"
+      "getSiteDisplayName",
+      "getExperimentDisplayName"
     ]),
     currentSessionDatasets() {
       return this.sessionDatasets[this.currentSession.id];
@@ -538,7 +539,11 @@ export default {
                               `/xnat/app/action/DisplayItemAction/search_value/${currentSession.experiment}/search_element/  xnat:mrSessionData/      search_field/xnat:mrSessionData.ID`
                             "
                             target="_blank"
-                            >{{ currentSession.experiment }}</a
+                            >{{
+                              getExperimentDisplayName(
+                                currentSession.experiment
+                              )
+                            }}</a
                           >
                         </v-col>
                       </v-row>
