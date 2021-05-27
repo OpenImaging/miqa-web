@@ -43,8 +43,6 @@ export default {
     unsavedDialog: false,
     unsavedDialogResolve: null,
     emailDialog: false,
-    editingNoteDialog: false,
-    editingNotes: [],
     showNotePopup: false,
     keyboardShortcutDialog: false,
     scanning: false,
@@ -178,23 +176,6 @@ export default {
         );
         this.decisionChanged = false;
       }
-      this.reloadScan();
-    },
-    enableEditHistroy() {
-      this.editingNoteDialog = true;
-      this.editingNotes = this.notes.map(note => note.note);
-    },
-    async saveNoteHistory() {
-      // const modified =
-      await Promise.all(
-        this.notes
-          .filter((note, i) => note.note !== this.editingNotes[i])
-          .map((note, i) =>
-            this.djangoRest.setScanNote(note.id, this.editingNotes[i])
-          )
-      );
-      this.editingNoteDialog = false;
-      this.editingNotes = [];
       this.reloadScan();
     },
     async unsavedDialogYes() {
@@ -561,17 +542,6 @@ export default {
                       </v-card>
                     </v-menu>
                   </v-col>
-                  <v-col class="pb-1 pt-0" cols="1">
-                    <v-btn
-                      text
-                      small
-                      icon
-                      class="ma-0"
-                      :disabled="userLevel.value > 1"
-                      @click="enableEditHistroy"
-                      ><v-icon style="font-size: 18px;">edit</v-icon></v-btn
-                    >
-                  </v-col>
                 </v-row>
                 <v-row class="pb-1 pt-1" v-if="userLevel.value <= 2">
                   <v-col cols="11" class="pb-1 pt-0 pr-0">
@@ -716,31 +686,6 @@ export default {
             v-mousetrap="{ bind: 'esc', handler: unsavedDialogCancel }"
             >Cancel</v-btn
           >
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-dialog v-model="editingNoteDialog" max-width="600">
-      <v-card>
-        <v-list-item v-for="(note, i) in notes" :key="note.id">
-          <v-list-item-content>
-            <v-list-item-title class="grey--text darken-2">
-              {{ note.creator.first_name }}
-              {{ note.creator.last_name }}: {{ note.created }}
-            </v-list-item-title>
-            <v-textarea
-              label="Edit note"
-              filled
-              hide-details
-              no-resize
-              v-model="editingNotes[i]"
-            />
-          </v-list-item-content>
-        </v-list-item>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn text color="primary" @click="saveNoteHistory">
-            Save
-          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
