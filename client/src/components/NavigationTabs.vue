@@ -28,7 +28,7 @@ export default {
       @click="datasetTabClick"
     >
       <v-icon>view_column</v-icon>
-      Sessions
+      Experiments
     </v-tab>
     <v-tab to="/settings" v-if="userLevel.value === 0">
       <v-icon>settings</v-icon>

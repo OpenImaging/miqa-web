@@ -365,7 +365,7 @@ export default {
     >
       <div class="sessions-bar">
         <v-toolbar dense flat max-height="48px">
-          <v-toolbar-title>Sessions</v-toolbar-title>
+          <v-toolbar-title>Experiments</v-toolbar-title>
         </v-toolbar>
         <DataImportExport v-if="userLevel.value <= 2" />
         <SessionsView class="mt-1" minimal />
@@ -549,7 +549,7 @@ export default {
                       </v-row>
                       <v-row>
                         <v-col cols="3" class="pb-1 pt-0">
-                          Session
+                          Scan
                         </v-col>
                         <v-col cols="9" class="pb-1 pt-0 justifyRight">
                           {{ currentSession.name }}
