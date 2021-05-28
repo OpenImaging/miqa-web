@@ -16,6 +16,11 @@ const djangoClient = new Vue({
     async restoreLogin() {
       await oauthClient.maybeRestoreLogin();
       if (oauthClient.isLoggedIn) {
+        Object.assign(
+          apiClient.defaults.headers.common,
+          oauthClient.authHeaders
+        );
+
         this.user = await this.me();
       } else {
         this.login();
@@ -55,6 +60,18 @@ const djangoClient = new Vue({
     async scan(scanId) {
       const { data } = await apiClient.get(`/scans/${scanId}`);
       return data;
+    },
+    async setDecision(scanId, decision) {
+      await apiClient.post(`/scans/${scanId}/decision`, { decision });
+    },
+    async addScanNote(scanId, note) {
+      await apiClient.post("/scan_notes", {
+        scan: scanId,
+        note
+      });
+    },
+    async setScanNote(scanNoteId, note) {
+      await apiClient.put(`/scan_notes/${scanNoteId}`, { note });
     },
     async images(scanId) {
       const { data } = await apiClient.get("/images", {

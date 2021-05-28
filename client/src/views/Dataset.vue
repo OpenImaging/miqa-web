@@ -35,24 +35,22 @@ export default {
     NavigationTabs,
     SessionTimer
   },
-  inject: ["girderRest", "userLevel"],
+  inject: ["djangoRest", "userLevel"],
   data: () => ({
     newNote: "",
-    rating: null,
-    reviewer: "",
-    reviewChanged: false,
+    decision: null,
+    decisionChanged: false,
     unsavedDialog: false,
     unsavedDialogResolve: null,
     emailDialog: false,
     editingNoteDialog: false,
-    editingNote: "",
+    editingNotes: [],
     showNotePopup: false,
     keyboardShortcutDialog: false,
     scanning: false,
     direction: "forward",
     advanceTimeoutId: null,
-    nextAnimRequest: null,
-    noteLastSaveTime: new Date().toISOString()
+    nextAnimRequest: null
   }),
   computed: {
     ...mapState([
@@ -79,34 +77,17 @@ export default {
     currentSessionDatasets() {
       return this.sessionDatasets[this.currentSession.id];
     },
-    note() {
-      // TODO: This reference to the "lastNoteSaveTime" is here purely to get
-      // TODO: vue to re-compute the note property, since it does not naturally
-      // TODO: react to the changed "meta.note" property in the currentSession.
-      // TODO: Without this reference, when you save a new note on a scan, it
-      // TODO: gets updated in girder as well as in the currentSession, but it
-      // TODO: does not appear in the UI.  We need to figure out how to fix
-      // TODO: this properly.
-      this.noteLastSaveTime;
+    notes() {
       if (this.currentSession) {
-        return this.currentSession.note;
-      } else {
-        return "";
-      }
-    },
-    noteSegments() {
-      if (this.currentSession && this.note) {
-        return this.note.split(/[\r\n]+/g);
+        return this.currentSession.notes;
       } else {
         return [];
       }
     },
     lastNoteTruncated() {
-      const segments = this.noteSegments;
-      if (segments.length > 0) {
-        const lastSeg = segments.slice(-1)[0];
-        console.log(`last note: ${lastSeg}`);
-        return `${lastSeg.substring(0, 32)}...`;
+      if (this.notes.length > 0) {
+        const lastNote = this.notes.slice(-1)[0];
+        return `${lastNote.note.substring(0, 32)}...`;
       }
       return "";
     }
@@ -129,8 +110,9 @@ export default {
   watch: {
     currentSession(session) {
       if (session) {
-        this.rating = session.rating;
-        // TODO this.reviewer should also be set here
+        this.decision = session.decision;
+        this.decisionChanged = false;
+        this.newNote = "";
       }
     }
   },
@@ -175,7 +157,7 @@ export default {
       if (
         currentDataset &&
         (!toDataset || toDataset.folderId !== this.currentDataset.folderId) &&
-        this.reviewChanged
+        this.decisionChanged
       ) {
         this.unsavedDialog = true;
         return await new Promise(resolve => {
@@ -185,55 +167,35 @@ export default {
       return Promise.resolve(true);
     },
     async save() {
-      var user = this.girderRest.user;
-      var initial =
-        user.firstName.charAt(0).toLocaleUpperCase() +
-        user.lastName.charAt(0).toLocaleUpperCase();
-      var date = new Date().toISOString().slice(0, 10);
-      var note = "";
       if (this.newNote.trim()) {
-        note =
-          (this.note ? this.note + "\n" : "") +
-          `${initial}(${date}): ${this.newNote}`;
-      } else {
-        note = this.note;
+        await this.djangoRest.addScanNote(this.currentSession.id, this.newNote);
+        this.newNote = "";
       }
-      var meta = {
-        ...this.currentSession.meta,
-        ...{
-          note,
-          rating: this.rating !== undefined ? this.rating : null,
-          reviewer: user.firstName + " " + user.lastName
-        }
-      };
-      await this.girderRest.put(
-        `folder/${this.currentSession.folderId}/metadata?allowNull=true`,
-        meta
-      );
-      this.newNote = "";
-      this.currentSession.meta = meta;
-      this.reviewer = meta.reviewer;
-      this.reviewChanged = false;
-      this.noteLastSaveTime = new Date().toISOString();
+      if (this.decisionChanged) {
+        await this.djangoRest.setDecision(
+          this.currentSession.id,
+          this.decision
+        );
+        this.decisionChanged = false;
+      }
+      this.reloadScan();
     },
     enableEditHistroy() {
       this.editingNoteDialog = true;
-      this.editingNote = this.note;
+      this.editingNotes = this.notes.map(note => note.note);
     },
     async saveNoteHistory() {
-      var meta = {
-        ...this.currentSession.meta,
-        ...{
-          note: this.editingNote
-        }
-      };
-      await this.girderRest.put(
-        `folder/${this.currentSession.folderId}/metadata?allowNull=true`,
-        meta
+      // const modified =
+      await Promise.all(
+        this.notes
+          .filter((note, i) => note.note !== this.editingNotes[i])
+          .map((note, i) =>
+            this.djangoRest.setScanNote(note.id, this.editingNotes[i])
+          )
       );
-      this.currentSession.meta = meta;
       this.editingNoteDialog = false;
-      this.noteLastSaveTime = new Date().toISOString();
+      this.editingNotes = [];
+      this.reloadScan();
     },
     async unsavedDialogYes() {
       await this.save();
@@ -248,22 +210,21 @@ export default {
       this.unsavedDialogResolve(false);
       this.unsavedDialog = false;
     },
-    setRating(rating) {
-      if (rating !== this.rating) {
-        this.rating = rating;
-        this.ratingChanged();
+    setDecision(decision) {
+      if (decision !== this.decision) {
+        this.decision = decision;
+        this.onDecisionChanged();
       }
     },
     setNote(e) {
       this.newNote = e;
-      this.reviewChanged = true;
+      this.decisionChanged = true;
     },
-    async ratingChanged() {
-      if (!this.rating) {
-        this.reviewChanged = true;
+    async onDecisionChanged() {
+      if (this.decision !== this.currentSession.decision) {
+        this.decisionChanged = true;
         return;
       }
-      await this.save();
       if (this.firstDatasetInNextSession) {
         var currentDatasetId = this.currentDatasetId;
         this.$router
@@ -566,7 +527,6 @@ export default {
                     <v-menu
                       v-model="showNotePopup"
                       :close-on-content-click="false"
-                      :nudge-right="250"
                       offset-y
                       open-on-hover
                       top
@@ -578,7 +538,7 @@ export default {
                           text
                           small
                           icon
-                          :disabled="noteSegments.length < 1"
+                          :disabled="notes.length < 1"
                           class="ma-0"
                           v-on="on"
                           v-mousetrap="{
@@ -589,9 +549,15 @@ export default {
                         >
                       </template>
                       <v-card>
-                        <v-card-text class="note-history">
-                          <pre>{{ note }}</pre>
-                        </v-card-text>
+                        <v-list-item v-for="note in notes" :key="note.id">
+                          <v-list-item-content class="note-history">
+                            <v-list-item-title class="grey--text darken-2">
+                              {{ note.creator.first_name }}
+                              {{ note.creator.last_name }}: {{ note.created }}
+                            </v-list-item-title>
+                            {{ note.note }}
+                          </v-list-item-content>
+                        </v-list-item>
                       </v-card>
                     </v-menu>
                   </v-col>
@@ -633,7 +599,7 @@ export default {
                           small
                           color="grey"
                           class="my-0"
-                          :disabled="!reviewChanged"
+                          :disabled="!decisionChanged"
                           v-on="on"
                           @click="reloadScan"
                         >
@@ -653,40 +619,40 @@ export default {
                   <v-col cols="6" class="pb-1 pt-0">
                     <v-btn-toggle
                       class="buttons"
-                      v-model="rating"
-                      @change="ratingChanged"
+                      v-model="decision"
+                      @change="onDecisionChanged"
                     >
                       <v-btn
                         text
                         small
-                        value="bad"
+                        value="BAD"
                         color="red"
-                        :disabled="!newNote && !note"
+                        :disabled="!newNote && !notes"
                         v-mousetrap="{
                           bind: 'b',
-                          handler: () => setRating('bad')
+                          handler: () => setDecision('BAD')
                         }"
                         >Bad</v-btn
                       >
                       <v-btn
                         text
                         small
-                        value="good"
+                        value="GOOD"
                         color="green"
                         v-mousetrap="{
                           bind: 'g',
-                          handler: () => setRating('good')
+                          handler: () => setDecision('GOOD')
                         }"
                         >Good</v-btn
                       >
                       <v-btn
                         text
                         small
-                        value="usableExtra"
+                        value="USABLE_EXTRA"
                         color="light-green"
                         v-mousetrap="{
                           bind: 'u',
-                          handler: () => setRating('usableExtra')
+                          handler: () => setDecision('USABLE_EXTRA')
                         }"
                         >Extra</v-btn
                       >
@@ -698,9 +664,7 @@ export default {
                       class="ma-0"
                       style="height: 36px"
                       small
-                      :disabled="
-                        !reviewChanged || rating === null || rating === ''
-                      "
+                      :disabled="!decisionChanged && !newNote"
                       @click="save"
                       v-mousetrap="{ bind: 'alt+s', handler: save }"
                     >
@@ -757,16 +721,21 @@ export default {
     </v-dialog>
     <v-dialog v-model="editingNoteDialog" max-width="600">
       <v-card>
-        <v-card-text>
-          <v-textarea
-            label="Edit note history"
-            filled
-            hide-details
-            no-resize
-            :rows="12"
-            v-model.lazy="editingNote"
-          ></v-textarea
-        ></v-card-text>
+        <v-list-item v-for="(note, i) in notes" :key="note.id">
+          <v-list-item-content>
+            <v-list-item-title class="grey--text darken-2">
+              {{ note.creator.first_name }}
+              {{ note.creator.last_name }}: {{ note.created }}
+            </v-list-item-title>
+            <v-textarea
+              label="Edit note"
+              filled
+              hide-details
+              no-resize
+              v-model="editingNotes[i]"
+            />
+          </v-list-item-content>
+        </v-list-item>
         <v-card-actions>
           <v-spacer />
           <v-btn text color="primary" @click="saveNoteHistory">
@@ -776,7 +745,7 @@ export default {
       </v-card>
     </v-dialog>
     <ScreenshotDialog />
-    <EmailDialog v-model="emailDialog" :note="note" />
+    <EmailDialog v-model="emailDialog" :notes="notes" />
     <KeyboardShortcutDialog v-model="keyboardShortcutDialog" />
   </v-layout>
 </template>
@@ -861,15 +830,9 @@ export default {
   }
 }
 
-.v-card__text.note-history {
+.v-list-item__content.note-history {
   width: 500px;
   max-height: 400px;
   overflow-y: auto;
-
-  pre {
-    white-space: pre-wrap;
-    font-family: inherit;
-    overflow-y: auto;
-  }
 }
 </style>
