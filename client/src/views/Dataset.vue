@@ -181,20 +181,17 @@ export default {
     },
     enableEditHistroy() {
       this.editingNoteDialog = true;
-      this.editingNotes = [];
-      for (let i = 0; i < this.notes.length; i++) {
-        let note = this.notes[i];
-        this.editingNotes.push(note.note);
-      }
+      this.editingNotes = this.notes.map(note => note.note);
     },
     async saveNoteHistory() {
-      for (let i = 0; i < this.editingNotes.length; i++) {
-        let editingNote = this.editingNotes[i];
-        let note = this.notes[i];
-        if (editingNote !== note.note) {
-          await this.djangoRest.setScanNote(note.id, editingNote);
-        }
-      }
+      // const modified =
+      await Promise.all(
+        this.notes
+          .filter((note, i) => note.note !== this.editingNotes[i])
+          .map((note, i) =>
+            this.djangoRest.setScanNote(note.id, this.editingNotes[i])
+          )
+      );
       this.editingNoteDialog = false;
       this.editingNotes = [];
       this.reloadScan();

@@ -114,14 +114,14 @@ export default {
 Scan: ${this.currentSession.name}`;
       if (this.notes) {
         this.body = `${this.body}
-Notes:`;
-        for (let i = 0; i < this.notes.length; i++) {
-          let note = this.notes[i];
-          this.body = `${this.body}
-${note.creator.first_name} ${note.creator.last_name}: ${note.created}
-${note.note}
+Notes:
 `;
-        }
+        this.body = this.notes
+          .map(
+            note =>
+              `${note.creator.first_name} ${note.creator.last_name}: ${note.created}\n${note.note}`
+          )
+          .join("\n");
       }
       this.initialized = true;
     },
