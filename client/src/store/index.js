@@ -30,20 +30,6 @@ let taskRunId = -1;
 let savedWorker = null;
 let sessionTimeoutId = null;
 
-function decisionToRating(decision) {
-  switch (decision) {
-    case 'GOOD':
-      return 'good';
-    case 'USABLE_EXTRA':
-      return 'usableExtra';
-    case 'BAD':
-      return 'bad';
-    case 'NONE':
-    default:
-      return '';
-  }
-}
-
 function shrinkProxyManager(proxyManager) {
   proxyManager.getViews().forEach((view) => {
     view.setContainer(null);
@@ -570,8 +556,7 @@ const store = new Vuex.Store({
             numDatasets: images.length,
             site: scan.site,
             notes: scan.notes,
-            decision: scan.decision,
-            rating: decisionToRating(scan.decision),
+            decisions: scan.decisions
             // folderId: sessionId,
             // meta: Object.assign({}, session.meta),
           };
@@ -621,9 +606,8 @@ const store = new Vuex.Store({
           numDatasets: images.length,
           site: scan.site,
           notes: scan.notes,
-          decision: scan.decision,
-          rating: decisionToRating(scan.decision),
-        },
+          decisions: scan.decisions
+        }
       });
     },
     async setCurrentImage({ commit, dispatch }, imageId) {

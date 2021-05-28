@@ -115,6 +115,16 @@ export default {
       this.setDrawer(true);
     }
   },
+  watch: {
+    currentSession(session) {
+      if (session) {
+        let last = _.last(session.decisions);
+        this.decision = last ? last.decision : null;
+        this.decisionChanged = false;
+        this.newNote = "";
+      }
+    }
+  },
   async beforeRouteUpdate(to, from, next) {
     const toDataset = this.getDataset(to.params.datasetId);
     const result = await this.beforeLeaveSession(toDataset);
@@ -166,7 +176,7 @@ export default {
       return Promise.resolve(true);
     },
     async save() {
-      if (this.newNote.trim()) {
+      if (this.newNote && this.newNote.trim()) {
         await this.djangoRest.addScanNote(this.currentSession.id, this.newNote);
         this.newNote = '';
       }
@@ -200,12 +210,15 @@ export default {
     },
     setNote(e) {
       this.newNote = e;
-      this.decisionChanged = true;
     },
     async onDecisionChanged() {
-      if (this.decision !== this.currentSession.decision) {
+      let last = _.last(this.currentSession.decisions);
+      let lastDecision = last ? last.decision : null;
+      if (this.decision && this.decision != lastDecision) {
         this.decisionChanged = true;
         return;
+      } else {
+        this.decisionChanged = false;
       }
       if (this.firstDatasetInNextSession) {
         const { currentDatasetId } = this;
