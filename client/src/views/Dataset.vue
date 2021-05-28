@@ -111,7 +111,7 @@ export default {
       if (session) {
         this.decision = session.decision;
         this.decisionChanged = false;
-        this.newNote = null;
+        this.newNote = "";
       }
     }
   },
@@ -220,7 +220,7 @@ export default {
       this.decisionChanged = true;
     },
     async onDecisionChanged() {
-      if (this.decision != this.currentSession.decision) {
+      if (this.decision !== this.currentSession.decision) {
         this.decisionChanged = true;
         return;
       }
