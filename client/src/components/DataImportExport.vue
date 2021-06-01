@@ -30,8 +30,8 @@ export default {
       this.importErrorText = '';
       this.importErrors = false;
       try {
+        // TODO: maybe call sessions() globally on app startup
         const sessions = await this.djangoRest.sessions();
-        // Just use the first session for now
         const session = sessions[0];
 
         await this.djangoRest.import(session.id);
