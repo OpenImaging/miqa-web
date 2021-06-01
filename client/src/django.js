@@ -14,6 +14,7 @@ const djangoClient = new Vue({
     async restoreLogin() {
       await oauthClient.maybeRestoreLogin();
       if (oauthClient.isLoggedIn) {
+        console.log(oauthClient.authHeaders);
         Object.assign(
           apiClient.defaults.headers.common,
           oauthClient.authHeaders,
@@ -28,6 +29,7 @@ const djangoClient = new Vue({
     async logout() {
       await oauthClient.logout();
       this.user = null;
+      // await oauthClient.redirectToLogin(); // TODO: change
     },
     async import(sessionId) {
       await apiClient.post(`/sessions/${sessionId}/import`);

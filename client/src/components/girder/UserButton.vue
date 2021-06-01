@@ -1,4 +1,6 @@
 <script>
+import { mapGetters } from 'vuex';
+
 export default {
   name: 'UserButton',
   inject: ['girderRest'],
@@ -10,21 +12,20 @@ export default {
         first.charAt(0).toLocaleUpperCase() + last.charAt(0).toLocaleUpperCase()
       );
     },
+    ...mapGetters(['currentUser']),
   },
 };
 </script>
 
 <template>
   <v-btn
-    v-if="girderRest.user"
+    v-if="true"
     icon
-    color="grey lighten-1"
-    class="user-avatar-btn"
-    @click="$emit('user', girderRest.user)"
+    color="black lighten-1"
+    class="mr-4"
+    @click="$emit('user')"
   >
-    <v-avatar>
-      {{ initials }}
-    </v-avatar>
+    Logout
   </v-btn>
   <v-btn
     v-else

@@ -138,6 +138,10 @@ export default {
       'swapToDataset',
     ]),
     cleanDatasetName,
+    async logoutUser() {
+      await this.logout();
+      this.$router.go('/');
+    },
     handleNavigationError(fail) {
       let failureType = 'unknown';
       if (isNavigationFailure(fail, NavigationFailureType.redirected)) {
@@ -318,7 +322,7 @@ export default {
           <v-icon>email</v-icon>
         </v-badge>
       </v-btn>
-      <UserButton @user="logout()" />
+      <UserButton @user="logoutUser()" />
     </v-app-bar>
     <v-navigation-drawer
       app

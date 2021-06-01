@@ -376,9 +376,9 @@ const store = new Vuex.Store({
       fileCache.clear();
       datasetCache.clear();
     },
-    logout({ commit, dispatch }) {
+    async logout({ commit, dispatch }) {
       dispatch('reset');
-      girder.rest.logout();
+      await djangoRest.logout();
       commit('setSessionStatus', 'logout');
     },
     async requestCurrentUser({ commit }) {
