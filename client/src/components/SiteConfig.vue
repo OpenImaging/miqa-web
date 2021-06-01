@@ -1,54 +1,54 @@
 <script>
-import { mapState, mapActions } from "vuex";
+import { mapState, mapActions } from 'vuex';
 
-import SiteTableContactCell from "@/components/SiteTableContactCell";
-import SiteTableDisplayNameCell from "@/components/SiteTableDisplayNameCell";
+import SiteTableContactCell from '@/components/SiteTableContactCell.vue';
+import SiteTableDisplayNameCell from '@/components/SiteTableDisplayNameCell.vue';
 
 export default {
-  name: "SiteConfig",
+  name: 'SiteConfig',
   components: {
     SiteTableContactCell,
-    SiteTableDisplayNameCell
+    SiteTableDisplayNameCell,
   },
-  inject: ["girderRest"],
+  inject: ['girderRest'],
   computed: {
-    ...mapState(["sites"]),
+    ...mapState(['sites']),
     headers: () => [
-      { text: "Site", value: "name" },
-      { text: "Display Name", value: "displayName" },
-      { text: "PI", value: "pi" },
-      { text: "MRI Physicist", value: "mriPhysicist" },
-      { text: "Technician", value: "technician" },
-      { text: "lead RA", value: "leadRA" }
+      { text: 'Site', value: 'name' },
+      { text: 'Display Name', value: 'displayName' },
+      { text: 'PI', value: 'pi' },
+      { text: 'MRI Physicist', value: 'mriPhysicist' },
+      { text: 'Technician', value: 'technician' },
+      { text: 'lead RA', value: 'leadRA' },
     ],
     items() {
       if (!this.sites) {
         return [];
       }
-      return this.sites.map(site => ({
+      return this.sites.map((site) => ({
         site,
         name: site.name,
         displayName: site.meta ? site.meta.displayName : null,
         pi: site.meta ? site.meta.pi : [],
         mriPhysicist: site.meta ? site.meta.mriPhysicist : [],
         technician: site.meta ? site.meta.technician : [],
-        leadRA: site.meta ? site.meta.leadRA : []
+        leadRA: site.meta ? site.meta.leadRA : [],
       }));
-    }
+    },
   },
   created() {
     this.loadSites();
   },
   methods: {
-    ...mapActions(["loadSites"]),
+    ...mapActions(['loadSites']),
     async update(site, field, value) {
       if (!site.meta) {
-        this.$set(site, "meta", {});
+        this.$set(site, 'meta', {});
       }
       this.$set(site.meta, field, value);
       await this.girderRest.put(`item/${site._id}/metadata`, site.meta);
-    }
-  }
+    },
+  },
 };
 </script>
 

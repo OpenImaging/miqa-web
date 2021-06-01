@@ -1,24 +1,24 @@
 <script>
-import _ from "lodash";
-import { mapState, mapGetters, mapMutations } from "vuex";
+import _ from 'lodash';
+import { mapState, mapGetters, mapMutations } from 'vuex';
 
-import EmailRecipientCombobox from "./EmailRecipientCombobox";
+import EmailRecipientCombobox from './EmailRecipientCombobox.vue';
 
 export default {
-  name: "EmailDialog",
+  name: 'EmailDialog',
   components: {
-    EmailRecipientCombobox
+    EmailRecipientCombobox,
   },
-  inject: ["girderRest"],
+  inject: ['girderRest'],
   props: {
     value: {
       type: Boolean,
-      required: true
+      required: true,
     },
     notes: {
       type: Array,
-      default: () => []
-    }
+      default: () => [],
+    },
   },
   data: () => ({
     initialized: false,
@@ -30,20 +30,20 @@ export default {
     bccCandidates: [],
     showCC: false,
     showBCC: false,
-    subject: "",
-    body: "",
+    subject: '',
+    body: '',
     selectedScreenshots: [],
     valid: true,
-    sending: false
+    sending: false,
   }),
   computed: {
-    ...mapState(["screenshots"]),
+    ...mapState(['screenshots']),
     ...mapGetters([
-      "currentUser",
-      "currentDataset",
-      "currentSession",
-      "siteMap"
-    ])
+      'currentUser',
+      'currentDataset',
+      'currentSession',
+      'siteMap',
+    ]),
   },
   watch: {
     currentUser(value) {
@@ -65,10 +65,10 @@ export default {
       if (value) {
         this.initialize();
       }
-    }
+    },
   },
   methods: {
-    ...mapMutations(["removeScreenshot"]),
+    ...mapMutations(['removeScreenshot']),
     initialize() {
       if (this.$refs.form) {
         this.$refs.form.resetValidation();
@@ -80,35 +80,37 @@ export default {
       this.toCandidates = [];
       this.ccCandidates = [];
       this.bccCandidates = [];
-      var site = this.siteMap[this.currentSession.site];
+      const site = this.siteMap[this.currentSession.site];
       if (site && site.meta) {
-        for (let key in site.meta) {
-          if (_.isArray(site.meta[key])) {
-            for (let contact of site.meta[key]) {
+        Object.values(site.meta).forEach((value) => {
+          if (_.isArray(value)) {
+            value.forEach((contact) => {
               switch (contact.mode) {
-                case "to":
+                case 'to':
                   this.toCandidates.push(contact);
                   break;
-                case "cc":
+                case 'cc':
                   this.ccCandidates.push(contact);
                   break;
-                case "bcc":
+                case 'bcc':
                   this.bccCandidates.push(contact);
                   break;
+                default:
+                  break;
               }
-            }
+            });
           }
-        }
+        });
       }
-      this.to = this.toCandidates.map(c => c.name);
-      this.cc = this.ccCandidates.map(c => c.name);
-      this.bcc = this.bccCandidates.map(c => c.name);
+      this.to = this.toCandidates.map((c) => c.name);
+      this.cc = this.ccCandidates.map((c) => c.name);
+      this.bcc = this.bccCandidates.map((c) => c.name);
       if (this.currentUser) {
         this.bcc.push(this.currentUser.email);
       }
       this.showCC = !!this.cc.length;
       this.showBCC = !!this.bcc.length;
-      var experiment = `Regarding ${this.currentSession.experiment}, ${this.currentSession.name}`;
+      const experiment = `Regarding ${this.currentSession.experiment}, ${this.currentSession.name}`;
       this.subject = experiment;
       this.body = `Experiment: ${this.currentSession.experiment}
 Scan: ${this.currentSession.name}`;
@@ -118,16 +120,15 @@ Notes:
 `;
         this.body = this.notes
           .map(
-            note =>
-              `${note.creator.first_name} ${note.creator.last_name}: ${note.created}\n${note.note}`
+            (note) => `${note.creator.first_name} ${note.creator.last_name}: ${note.created}\n${note.note}`,
           )
-          .join("\n");
+          .join('\n');
       }
       this.initialized = true;
     },
     toggleScreenshotSelection(screenshot) {
-      let index;
-      if ((index = this.selectedScreenshots.indexOf(screenshot)) === -1) {
+      const index = this.selectedScreenshots.indexOf(screenshot);
+      if (index === -1) {
         this.selectedScreenshots.push(screenshot);
       } else {
         this.selectedScreenshots.splice(index, 1);
@@ -137,33 +138,33 @@ Notes:
       if (!this.$refs.form.validate()) {
         return;
       }
-      var toAddresses = this.to.map(recipient => {
-        var candidate = this.toCandidates.find(c => c.name === recipient);
+      const toAddresses = this.to.map((recipient) => {
+        const candidate = this.toCandidates.find((c) => c.name === recipient);
         return candidate ? candidate.email : recipient;
       });
-      var ccAddresses = this.cc.map(recipient => {
-        var candidate = this.ccCandidates.find(c => c.name === recipient);
+      const ccAddresses = this.cc.map((recipient) => {
+        const candidate = this.ccCandidates.find((c) => c.name === recipient);
         return candidate ? candidate.email : recipient;
       });
-      var bccAddresses = this.bcc.map(recipient => {
-        var candidate = this.bccCandidates.find(c => c.name === recipient);
+      const bccAddresses = this.bcc.map((recipient) => {
+        const candidate = this.bccCandidates.find((c) => c.name === recipient);
         return candidate ? candidate.email : recipient;
       });
       this.sending = true;
-      await this.girderRest.post(`miqa_email`, {
+      await this.girderRest.post('miqa_email', {
         to: toAddresses,
         cc: ccAddresses,
         bcc: bccAddresses,
         subject: this.subject,
         body: this.body,
         screenshots: this.screenshots.filter(
-          screenshot => this.selectedScreenshots.indexOf(screenshot) !== -1
-        )
+          (screenshot) => this.selectedScreenshots.indexOf(screenshot) !== -1,
+        ),
       });
       this.sending = false;
-      this.$emit("input", false);
+      this.$emit('input', false);
       this.initialized = false;
-      for (let i = this.screenshots.length - 1; i >= 0; i--) {
+      for (let i = this.screenshots.length - 1; i >= 0; i -= 1) {
         const screenshot = this.screenshots[i];
         if (this.selectedScreenshots.indexOf(screenshot) !== -1) {
           this.removeScreenshot(screenshot);
@@ -173,45 +174,68 @@ Notes:
     },
     getBorder(screenshot) {
       if (this.selectedScreenshots.indexOf(screenshot) === -1) {
-        return "transparent";
+        return 'transparent';
       }
       return this.$vuetify.theme.currentTheme.primary;
-    }
-  }
+    },
+  },
 };
 </script>
 
 <template>
-  <v-dialog :value="value" @input="$emit('input', $event)" max-width="60%">
-    <v-form @submit.prevent="send" ref="form">
+  <v-dialog
+    :value="value"
+    max-width="60%"
+    @input="$emit('input', $event)"
+  >
+    <v-form
+      ref="form"
+      @submit.prevent="send"
+    >
       <v-card>
         <v-card-title class="headline grey lighten-4">
           Send email
           <v-spacer />
-          <v-btn small icon class="ma-0" @click="$emit('input', false)">
+          <v-btn
+            small
+            icon
+            class="ma-0"
+            @click="$emit('input', false)"
+          >
             <v-icon>close</v-icon>
           </v-btn>
         </v-card-title>
-        <v-container grid-list-sm class="py-0">
+        <v-container
+          grid-list-sm
+          class="py-0"
+        >
           <v-layout align-center>
             <v-flex>
               <EmailRecipientCombobox
-                label="to"
                 v-model="to"
+                label="to"
                 :candidates="toCandidates.map(c => c.name)"
                 :required="true"
               />
             </v-flex>
             <v-flex shrink>
-              <a class="px-2" v-if="!showCC" @click="showCC = true">cc</a>
-              <a class="px-2" v-if="!showBCC" @click="showBCC = true">bcc</a>
+              <a
+                v-if="!showCC"
+                class="px-2"
+                @click="showCC = true"
+              >cc</a>
+              <a
+                v-if="!showBCC"
+                class="px-2"
+                @click="showBCC = true"
+              >bcc</a>
             </v-flex>
           </v-layout>
           <v-layout v-if="showCC">
             <v-flex>
               <EmailRecipientCombobox
-                label="cc"
                 v-model="cc"
+                label="cc"
                 :candidates="ccCandidates.map(c => c.name)"
                 :required="false"
               />
@@ -220,8 +244,8 @@ Notes:
           <v-layout v-if="showBCC">
             <v-flex>
               <EmailRecipientCombobox
-                label="bcc"
                 v-model="bcc"
+                label="bcc"
                 :candidates="bccCandidates.map(c => c.name)"
                 :required="false"
               />
@@ -242,11 +266,17 @@ Notes:
           </v-layout>
           <v-layout>
             <v-flex>
-              <v-textarea label="Body" rows="8" v-model="body"></v-textarea>
+              <v-textarea
+                v-model="body"
+                label="Body"
+                rows="8"
+              />
             </v-flex>
           </v-layout>
           <template v-if="screenshots.length">
-            <div class="caption">Include screenshots</div>
+            <div class="caption">
+              Include screenshots
+            </div>
             <v-layout class="screenshot-row">
               <v-flex
                 v-for="(screenshot, index) of screenshots"
@@ -256,12 +286,15 @@ Notes:
                 <v-hover #default="{ hover }">
                   <v-card
                     class="screenshot"
-                    @click="toggleScreenshotSelection(screenshot)"
                     :style="{
                       borderColor: getBorder(screenshot)
                     }"
+                    @click="toggleScreenshotSelection(screenshot)"
                   >
-                    <v-img :src="screenshot.dataURL" aspect-ratio="1"></v-img>
+                    <v-img
+                      :src="screenshot.dataURL"
+                      aspect-ratio="1"
+                    />
                     <v-card-text class="text-truncate">
                       <v-tooltip top>
                         <template #activator="{ on }">
@@ -273,11 +306,11 @@ Notes:
                     <v-fade-transition>
                       <v-btn
                         v-if="hover"
-                        @click.stop="removeScreenshot(screenshot)"
                         fab
                         small
                         color="primary"
                         class="close"
+                        @click.stop="removeScreenshot(screenshot)"
                       >
                         <v-icon>close</v-icon>
                       </v-btn>
@@ -289,8 +322,13 @@ Notes:
           </template>
         </v-container>
         <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" text :loading="sending" type="submit">
+          <v-spacer />
+          <v-btn
+            color="primary"
+            text
+            :loading="sending"
+            type="submit"
+          >
             Send
           </v-btn>
         </v-card-actions>

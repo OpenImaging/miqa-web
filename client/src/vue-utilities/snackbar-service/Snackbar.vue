@@ -1,7 +1,16 @@
 <template>
-  <v-snackbar v-model="show" v-bind="options" :timeout="timeout">
+  <v-snackbar
+    v-model="show"
+    v-bind="options"
+    :timeout="timeout"
+  >
     {{ text }}
-    <v-btn v-if="callback" color="primary" text @click="buttonClicked">
+    <v-btn
+      v-if="callback"
+      color="primary"
+      text
+      @click="buttonClicked"
+    >
       {{ button }}
     </v-btn>
   </v-snackbar>
@@ -9,20 +18,20 @@
 
 <script>
 export default {
-  name: "Snackbar",
+  name: 'Snackbar',
   data: () => ({
     show: false,
-    text: "",
-    button: "",
+    text: '',
+    button: '',
     callback: null,
     timeout: 0,
-    options: { left: true }
+    options: { left: true },
   }),
   methods: {
     buttonClicked() {
       this.callback();
       this.show = false;
-    }
-  }
+    },
+  },
 };
 </script>

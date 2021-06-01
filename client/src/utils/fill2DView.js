@@ -1,13 +1,13 @@
 export default function fill2DView(view) {
   view.resize();
   const viewName = view.getName();
-  if (viewName === "default") return;
+  if (viewName === 'default') return;
 
   const bounds = view.getRenderer().computeVisiblePropBounds();
   const dim = [
     (bounds[1] - bounds[0]) / 2,
     (bounds[3] - bounds[2]) / 2,
-    (bounds[5] - bounds[4]) / 2
+    (bounds[5] - bounds[4]) / 2,
   ];
   const w = view.getContainer().clientWidth;
   const h = view.getContainer().clientHeight;
@@ -15,15 +15,12 @@ export default function fill2DView(view) {
 
   let x;
   let y;
-  if (viewName === "x") {
-    x = dim[1];
-    y = dim[2];
-  } else if (viewName === "y") {
-    x = dim[0];
-    y = dim[2];
-  } else if (viewName === "z") {
-    x = dim[0];
-    y = dim[1];
+  if (viewName === 'x') {
+    [, x, y] = dim;
+  } else if (viewName === 'y') {
+    [x, , y] = dim;
+  } else if (viewName === 'z') {
+    [x, y] = dim;
   }
   if (r >= x / y) {
     // use width

@@ -1,21 +1,21 @@
-import Promise from "bluebird";
-import Vue from "vue";
-import Vuex from "vuex";
-import vtkProxyManager from "vtk.js/Sources/Proxy/Core/ProxyManager";
-import { InterpolationType } from "vtk.js/Sources/Rendering/Core/ImageProperty/Constants";
-import _ from "lodash";
+import Promise from 'bluebird';
+import Vue from 'vue';
+import Vuex from 'vuex';
+import vtkProxyManager from 'vtk.js/Sources/Proxy/Core/ProxyManager';
+import { InterpolationType } from 'vtk.js/Sources/Rendering/Core/ImageProperty/Constants';
+import _ from 'lodash';
 
-import ReaderFactory from "../utils/ReaderFactory";
-import "../utils/registerReaders";
+import '../utils/registerReaders';
 
-import readImageArrayBuffer from "itk/readImageArrayBuffer";
-import WorkerPool from "itk/WorkerPool";
-import ITKHelper from "vtk.js/Sources/Common/DataModel/ITKHelper";
+import readImageArrayBuffer from 'itk/readImageArrayBuffer';
+import WorkerPool from 'itk/WorkerPool';
+import ITKHelper from 'vtk.js/Sources/Common/DataModel/ITKHelper';
+import ReaderFactory from '../utils/ReaderFactory';
 
-import { proxy } from "../vtk";
-import { getView } from "../vtk/viewManager";
-import girder from "../girder";
-import djangoRest from "../django";
+import { proxy } from '../vtk';
+import { getView } from '../vtk/viewManager';
+import girder from '../girder';
+import djangoRest from '../django';
 
 const { convertItkToVtkImage } = ITKHelper;
 
@@ -23,25 +23,152 @@ Vue.use(Vuex);
 
 const fileCache = new Map();
 const datasetCache = new Map();
-var readDataQueue = [];
+let readDataQueue = [];
 
 const poolSize = navigator.hardwareConcurrency / 2 || 2;
-let workerPool = new WorkerPool(poolSize, poolFunction);
 let taskRunId = -1;
 let savedWorker = null;
 let sessionTimeoutId = null;
 
 function decisionToRating(decision) {
   switch (decision) {
-    case "GOOD":
-      return "good";
-    case "USABLE_EXTRA":
-      return "usableExtra";
-    case "BAD":
-      return "bad";
-    case "NONE":
-      return "";
+    case 'GOOD':
+      return 'good';
+    case 'USABLE_EXTRA':
+      return 'usableExtra';
+    case 'BAD':
+      return 'bad';
+    case 'NONE':
+    default:
+      return '';
   }
+}
+
+function shrinkProxyManager(proxyManager) {
+  proxyManager.getViews().forEach((view) => {
+    view.setContainer(null);
+    proxyManager.deleteProxy(view);
+  });
+}
+
+function prepareProxyManager(proxyManager) {
+  if (!proxyManager.getViews().length) {
+    ['View2D_Z:z', 'View2D_X:x', 'View2D_Y:y'].forEach((type) => {
+      const view = getView(proxyManager, type);
+      view.setOrientationAxesVisibility(false);
+      view.getRepresentations().forEach((representation) => {
+        representation.setInterpolationType(InterpolationType.NEAREST);
+        representation.onModified(() => {
+          view.render(true);
+        });
+      });
+    });
+  }
+}
+
+function getArrayName(filename) {
+  const idx = filename.lastIndexOf('.');
+  const name = idx > -1 ? filename.substring(0, idx) : filename;
+  return `Scalars ${name}`;
+}
+
+function getData(id, file, webWorker = null) {
+  return new Promise((resolve, reject) => {
+    if (datasetCache.has(id)) {
+      resolve({ imageData: datasetCache.get(id), webWorker });
+    } else {
+      const fileName = file.name;
+      const io = new FileReader();
+
+      io.onload = function onLoad() {
+        readImageArrayBuffer(webWorker, io.result, fileName)
+          .then(({ webWorker, image }) => { // eslint-disable-line no-shadow
+            const imageData = convertItkToVtkImage(image, {
+              scalarArrayName: getArrayName(fileName),
+            });
+            const dataRange = imageData
+              .getPointData()
+              .getArray(0)
+              .getRange();
+            datasetCache.set(id, { imageData });
+            // eslint-disable-next-line no-use-before-define
+            expandSessionRange(id, dataRange);
+            resolve({ imageData, webWorker });
+          })
+          .catch((error) => {
+            console.log('Problem reading image array buffer');
+            console.log('webworker', webWorker);
+            console.log('fileName', fileName);
+            console.log(error);
+            reject(error);
+          });
+      };
+
+      io.readAsArrayBuffer(file);
+    }
+  });
+}
+
+function loadFile(imageId) {
+  if (fileCache.has(imageId)) {
+    return { imageId, fileP: fileCache.get(imageId) };
+  }
+  const p = ReaderFactory.downloadDataset(
+    djangoRest.apiClient,
+    'nifti.nii.gz',
+    `/images/${imageId}/download`,
+  );
+  fileCache.set(imageId, p);
+  return { imageId, fileP: p };
+}
+
+function loadFileAndGetData(imageId) {
+  return loadFile(imageId).fileP.then((file) => getData(imageId, file, savedWorker)
+    .then(({ webWorker, imageData }) => {
+      savedWorker = webWorker;
+      return Promise.resolve({ imageData });
+    })
+    .catch((error) => {
+      const msg = 'loadFileAndGetData caught error getting data';
+      console.log(msg);
+      console.log(error);
+      return Promise.reject(msg);
+    })
+    .finally(() => {
+      if (savedWorker) {
+        savedWorker.terminate();
+        savedWorker = null;
+      }
+    }));
+}
+
+function poolFunction(webWorker, taskInfo) {
+  return new Promise((resolve, reject) => {
+    const { imageId } = taskInfo;
+
+    let filePromise = null;
+
+    if (fileCache.has(imageId)) {
+      filePromise = fileCache.get(imageId);
+    } else {
+      filePromise = ReaderFactory.downloadDataset(
+        djangoRest.apiClient,
+        'nifti.nii.gz',
+        `/images/${imageId}/download`,
+      );
+      fileCache.set(imageId, filePromise);
+    }
+
+    filePromise
+      .then((file) => {
+        resolve(getData(imageId, file, webWorker));
+      })
+      .catch((err) => {
+        console.log('poolFunction: fileP error of some kind');
+        console.log(err);
+        reject(err);
+      });
+  });
 }
 
 const store = new Vuex.Store({
@@ -67,7 +194,8 @@ const store = new Vuex.Store({
     responseInterceptor: null,
     userCheckPeriod: 60000, // In milliseconds
     sessionStatus: null,
-    remainingSessionTime: 0
+    remainingSessionTime: 0,
+    workerPool: new WorkerPool(poolSize, poolFunction),
   },
   getters: {
     sessionStatus(state) {
@@ -90,9 +218,9 @@ const store = new Vuex.Store({
       return getters.currentDataset ? getters.currentDataset.nextDataset : null;
     },
     getDataset(state) {
-      return function(datasetId) {
+      return (datasetId) => {
         if (!datasetId || !state.datasets[datasetId]) {
-          return;
+          return undefined;
         }
         return state.datasets[datasetId];
       };
@@ -112,21 +240,19 @@ const store = new Vuex.Store({
       return null;
     },
     experimentDatasets(state) {
-      return function(expId) {
+      return (expId) => {
         const experimentSessions = state.experimentSessions[expId];
         const expDatasets = [];
-        experimentSessions.forEach(sessionId => {
+        experimentSessions.forEach((sessionId) => {
           const sessionDatasets = state.sessionDatasets[sessionId];
-          sessionDatasets.forEach(datasetId => {
+          sessionDatasets.forEach((datasetId) => {
             expDatasets.push(datasetId);
           });
         });
         return expDatasets;
       };
     },
-    getTodoById: state => id => {
-      return state.todos.find(todo => todo.id === id);
-    },
+    getTodoById: (state) => (id) => state.todos.find((todo) => todo.id === id),
     firstDatasetInPreviousSession(state, getters) {
       return getters.currentDataset
         ? `${getters.currentDataset.firstDatasetInPreviousSession}`
@@ -143,8 +269,7 @@ const store = new Vuex.Store({
         if (expIdx >= 1) {
           const prevExp = state.experiments[state.experimentIds[expIdx - 1]];
           const prevExpSessions = state.experimentSessions[prevExp.id];
-          const prevExpSessionDatasets =
-            state.sessionDatasets[prevExpSessions[0].id];
+          const prevExpSessionDatasets = state.sessionDatasets[prevExpSessions[0].id];
           return prevExpSessionDatasets[0];
         }
       }
@@ -156,8 +281,7 @@ const store = new Vuex.Store({
         if (expIdx < state.experimentIds.length - 1) {
           const nextExp = state.experiments[state.experimentIds[expIdx + 1]];
           const nextExpSessions = state.experimentSessions[nextExp.id];
-          const nextExpSessionDatasets =
-            state.sessionDatasets[nextExpSessions[0].id];
+          const nextExpSessionDatasets = state.sessionDatasets[nextExpSessions[0].id];
           return nextExpSessionDatasets[0];
         }
       }
@@ -166,32 +290,29 @@ const store = new Vuex.Store({
     siteMap(state) {
       if (!state.sites) {
         return {};
-      } else {
-        return _.keyBy(state.sites, "id");
       }
+      return _.keyBy(state.sites, 'id');
     },
     getSiteDisplayName(state, getters) {
-      return function(id) {
-        var siteMap = getters.siteMap;
+      return (id) => {
+        const { siteMap } = getters;
         if (siteMap[id]) {
           return siteMap[id].name;
-        } else {
-          return id;
         }
+        return id;
       };
     },
     getExperimentDisplayName(state) {
-      return function(id) {
+      return (id) => {
         if (state.experiments[id]) {
           return state.experiments[id].name;
-        } else {
-          return id;
         }
+        return id;
       };
     },
     remainingSessionTime(state) {
       return state.remainingSessionTime;
-    }
+    },
   },
   mutations: {
     setCurrentImageId(state, imageId) {
@@ -225,7 +346,7 @@ const store = new Vuex.Store({
     },
     setRemainingSessionTime(state, timeRemaining) {
       state.remainingSessionTime = timeRemaining;
-    }
+    },
   },
   actions: {
     reset({ state, commit }) {
@@ -240,7 +361,7 @@ const store = new Vuex.Store({
       }
 
       if (taskRunId >= 0) {
-        workerPool.cancel(taskRunId);
+        state.workerPool.cancel(taskRunId);
         taskRunId = -1;
       }
 
@@ -255,7 +376,7 @@ const store = new Vuex.Store({
       state.datasets = {};
       state.proxyManager = null;
       state.vtkViews = [];
-      commit("setCurrentImageId", null);
+      commit('setCurrentImageId', null);
       state.loadingDataset = false;
       state.errorLoadingDataset = false;
       state.loadingExperiment = false;
@@ -270,13 +391,13 @@ const store = new Vuex.Store({
       datasetCache.clear();
     },
     logout({ commit, dispatch }) {
-      dispatch("reset");
+      dispatch('reset');
       girder.rest.logout();
-      commit("setSessionStatus", "logout");
+      commit('setSessionStatus', 'logout');
     },
     async requestCurrentUser({ commit }) {
-      const remainingTime = await girder.rest.get("miqa/sessiontime");
-      commit("setRemainingSessionTime", remainingTime.data);
+      const remainingTime = await girder.rest.get('miqa/sessiontime');
+      commit('setRemainingSessionTime', remainingTime.data);
     },
     startLoginMonitor() {
       // startLoginMonitor({ state, commit, dispatch }) {
@@ -415,20 +536,21 @@ const store = new Vuex.Store({
       const session = sessions[0];
 
       const experiments = await djangoRest.experiments(session.id);
-      for (let i = 0; i < experiments.length; i++) {
+      for (let i = 0; i < experiments.length; i += 1) {
         const experiment = experiments[i];
-        // set experimentSessions[experiment.id] before registering the experiment.id so SessionsView doesn't update prematurely
+        // set experimentSessions[experiment.id] before registering the experiment.id
+        // so SessionsView doesn't update prematurely
         state.experimentSessions[experiment.id] = [];
         state.experimentIds.push(experiment.id);
         state.experiments[experiment.id] = {
           id: experiment.id,
           name: experiment.name,
-          index: i
+          index: i,
         };
 
         // Web sessions == Django scans
         const scans = await djangoRest.scans(experiment.id);
-        for (let j = 0; j < scans.length; j++) {
+        for (let j = 0; j < scans.length; j += 1) {
           const scan = scans[j];
           state.sessionDatasets[scan.id] = [];
           state.experimentSessions[experiment.id].push(scan.id);
@@ -445,22 +567,20 @@ const store = new Vuex.Store({
             site: scan.site,
             notes: scan.notes,
             decision: scan.decision,
-            rating: decisionToRating(scan.decision)
+            rating: decisionToRating(scan.decision),
             // folderId: sessionId,
             // meta: Object.assign({}, session.meta),
           };
 
-          for (let k = 0; k < images.length; k++) {
+          for (let k = 0; k < images.length; k += 1) {
             const image = images[k];
             state.sessionDatasets[scan.id].push(image.id);
-            state.datasets[image.id] = Object.assign({}, image);
+            state.datasets[image.id] = { ...image };
             state.datasets[image.id].session = scan.id;
             state.datasets[image.id].experiment = experiment.id;
             state.datasets[image.id].index = k;
-            state.datasets[image.id].previousDataset =
-              k > 0 ? images[k - 1].id : null;
-            state.datasets[image.id].nextDataset =
-              k < images.length - 1 ? images[k + 1].id : null;
+            state.datasets[image.id].previousDataset = k > 0 ? images[k - 1].id : null;
+            state.datasets[image.id].nextDataset = k < images.length - 1 ? images[k + 1].id : null;
             state.datasets[
               image.id
             ].firstDatasetInPreviousSession = firstInPrev;
@@ -469,7 +589,7 @@ const store = new Vuex.Store({
             firstInPrev = images[0].id;
           } else {
             console.error(
-              `${experiment.name}/${scan.scan_type} has no datasets`
+              `${experiment.name}/${scan.scan_type} has no datasets`,
             );
           }
         }
@@ -485,9 +605,9 @@ const store = new Vuex.Store({
       if (!scanId) {
         return;
       }
-      let scan = await djangoRest.scan(scanId);
-      let images = await djangoRest.images(scanId);
-      commit("setScan", {
+      const scan = await djangoRest.scan(scanId);
+      const images = await djangoRest.images(scanId);
+      commit('setScan', {
         scanId: scan.id,
         scan: {
           id: scan.id,
@@ -498,26 +618,26 @@ const store = new Vuex.Store({
           site: scan.site,
           notes: scan.notes,
           decision: scan.decision,
-          rating: decisionToRating(scan.decision)
-        }
+          rating: decisionToRating(scan.decision),
+        },
       });
     },
     async setCurrentImage({ commit, dispatch }, imageId) {
-      commit("setCurrentImageId", imageId);
+      commit('setCurrentImageId', imageId);
       if (imageId) {
-        dispatch("reloadScan");
+        dispatch('reloadScan');
       }
     },
     async swapToDataset({ state, dispatch, getters }, dataset) {
       if (!dataset) {
-        throw new Error(`dataset id doesn't exist`);
+        throw new Error("dataset id doesn't exist");
       }
       if (getters.currentDataset === dataset) {
         return;
       }
       state.loadingDataset = true;
       state.errorLoadingDataset = false;
-      var oldSession = getters.currentSession;
+      const oldSession = getters.currentSession;
       const newSession = state.sessions[dataset.session];
       const oldExperiment = getters.currentExperiment
         ? getters.currentExperiment
@@ -527,16 +647,16 @@ const store = new Vuex.Store({
 
       // Check if we should cancel the currently loading experiment
       if (
-        newExperiment &&
-        oldExperiment &&
-        newExperiment.folderId !== oldExperiment.folderId &&
-        taskRunId >= 0
+        newExperiment
+        && oldExperiment
+        && newExperiment.folderId !== oldExperiment.folderId
+        && taskRunId >= 0
       ) {
-        workerPool.cancel(taskRunId);
+        state.workerPool.cancel(taskRunId);
         taskRunId = -1;
       }
 
-      var newProxyManager = false;
+      let newProxyManager = false;
       if (oldSession !== newSession && state.proxyManager) {
         // If we don't "shrinkProxyManager()" and reinitialize it between
         // "sessions" (a.k.a "scans"), then we can end up with no image
@@ -550,7 +670,7 @@ const store = new Vuex.Store({
 
       if (!state.proxyManager || newProxyManager) {
         state.proxyManager = vtkProxyManager.newInstance({
-          proxyConfiguration: proxy
+          proxyConfiguration: proxy,
         });
         state.vtkViews = [];
       }
@@ -559,8 +679,8 @@ const store = new Vuex.Store({
       let needPrep = false;
       if (!sourceProxy) {
         sourceProxy = state.proxyManager.createProxy(
-          "Sources",
-          "TrivialProducer"
+          'Sources',
+          'TrivialProducer',
         );
         needPrep = true;
       }
@@ -583,41 +703,42 @@ const store = new Vuex.Store({
           state.vtkViews = state.proxyManager.getViews();
         }
       } catch (err) {
-        console.log("Caught exception loading next image");
+        console.log('Caught exception loading next image');
         console.log(err);
         state.vtkViews = [];
         state.errorLoadingDataset = true;
       } finally {
-        dispatch("setCurrentImage", dataset.id);
+        dispatch('setCurrentImage', dataset.id);
         state.loadingDataset = false;
       }
 
       // If necessary, queue loading scans of new experiment
+      // eslint-disable-next-line no-use-before-define
       checkLoadExperiment(oldExperiment, newExperiment);
     },
     async loadSites({ state }) {
       const sites = await djangoRest.sites();
       // let { data: sites } = await girder.rest.get("miqa_setting/site");
       state.sites = sites;
-    }
-  }
+    },
+  },
 });
 
 // cache datasets associated with sessions of current experiment
 function checkLoadExperiment(oldValue, newValue) {
   if (
-    !newValue ||
-    newValue === oldValue ||
-    (newValue && oldValue && newValue.folderId === oldValue.folderId)
+    !newValue
+    || newValue === oldValue
+    || (newValue && oldValue && newValue.folderId === oldValue.folderId)
   ) {
     return;
   }
 
   if (oldValue) {
     const oldExperimentSessions = store.state.experimentSessions[oldValue.id];
-    oldExperimentSessions.forEach(sessionId => {
+    oldExperimentSessions.forEach((sessionId) => {
       const sessionDatasets = store.state.sessionDatasets[sessionId];
-      sessionDatasets.forEach(datasetId => {
+      sessionDatasets.forEach((datasetId) => {
         fileCache.delete(datasetId);
         datasetCache.delete(datasetId);
       });
@@ -626,147 +747,19 @@ function checkLoadExperiment(oldValue, newValue) {
 
   readDataQueue = [];
   const newExperimentSessions = store.state.experimentSessions[newValue.id];
-  newExperimentSessions.forEach(sessionId => {
+  newExperimentSessions.forEach((sessionId) => {
     const sessionDatasets = store.state.sessionDatasets[sessionId];
-    sessionDatasets.forEach(datasetId => {
+    sessionDatasets.forEach((datasetId) => {
       readDataQueue.push({
         // TODO don't hardcode sessionId
         sessionId: 1,
         experimentId: newValue.id,
         scanId: sessionId,
-        imageId: datasetId
+        imageId: datasetId,
       });
     });
   });
-  startReaderWorkerPool();
-}
-
-function prepareProxyManager(proxyManager) {
-  if (!proxyManager.getViews().length) {
-    ["View2D_Z:z", "View2D_X:x", "View2D_Y:y"].forEach(type => {
-      let view = getView(proxyManager, type);
-      view.setOrientationAxesVisibility(false);
-      view.getRepresentations().forEach(representation => {
-        representation.setInterpolationType(InterpolationType.NEAREST);
-        representation.onModified(() => {
-          view.render(true);
-        });
-      });
-    });
-  }
-}
-
-function shrinkProxyManager(proxyManager) {
-  proxyManager.getViews().forEach(view => {
-    view.setContainer(null);
-    proxyManager.deleteProxy(view);
-  });
-}
-
-function loadFile(imageId) {
-  if (fileCache.has(imageId)) {
-    return { imageId, fileP: fileCache.get(imageId) };
-  }
-  let p = ReaderFactory.downloadDataset(
-    djangoRest.apiClient,
-    "nifti.nii.gz",
-    `/images/${imageId}/download`
-  );
-  fileCache.set(imageId, p);
-  return { imageId, fileP: p };
-}
-
-function getData(id, file, webWorker = null) {
-  return new Promise((resolve, reject) => {
-    if (datasetCache.has(id)) {
-      resolve({ imageData: datasetCache.get(id), webWorker });
-    } else {
-      const fileName = file.name;
-      const io = new FileReader();
-
-      io.onload = function onLoad() {
-        readImageArrayBuffer(webWorker, io.result, fileName)
-          .then(({ webWorker, image }) => {
-            const imageData = convertItkToVtkImage(image, {
-              scalarArrayName: getArrayName(fileName)
-            });
-            const dataRange = imageData
-              .getPointData()
-              .getArray(0)
-              .getRange();
-            datasetCache.set(id, { imageData });
-            expandSessionRange(id, dataRange);
-            resolve({ imageData, webWorker });
-          })
-          .catch(error => {
-            console.log("Problem reading image array buffer");
-            console.log("webworker", webWorker);
-            console.log("fileName", fileName);
-            console.log(error);
-            reject(error);
-          });
-      };
-
-      io.readAsArrayBuffer(file);
-    }
-  });
-}
-
-function loadFileAndGetData(imageId) {
-  return loadFile(imageId).fileP.then(file => {
-    return getData(imageId, file, savedWorker)
-      .then(({ webWorker, imageData }) => {
-        savedWorker = webWorker;
-        return Promise.resolve({ imageData });
-      })
-      .catch(error => {
-        const msg = "loadFileAndGetData caught error getting data";
-        console.log(msg);
-        console.log(error);
-        return Promise.reject(msg);
-      })
-      .finally(() => {
-        if (savedWorker) {
-          savedWorker.terminate();
-          savedWorker = null;
-        }
-      });
-  });
-}
-
-function getArrayName(filename) {
-  const idx = filename.lastIndexOf(".");
-  const name = idx > -1 ? filename.substring(0, idx) : filename;
-  return `Scalars ${name}`;
-}
-
-function poolFunction(webWorker, taskInfo) {
-  return new Promise((resolve, reject) => {
-    const { imageId } = taskInfo;
-
-    let filePromise = null;
-
-    if (fileCache.has(imageId)) {
-      filePromise = fileCache.get(imageId);
-    } else {
-      filePromise = ReaderFactory.downloadDataset(
-        djangoRest.apiClient,
-        "nifti.nii.gz",
-        `/images/${imageId}/download`
-      );
-      fileCache.set(imageId, filePromise);
-    }
-
-    filePromise
-      .then(file => {
-        resolve(getData(imageId, file, webWorker));
-      })
-      .catch(err => {
-        console.log("poolFunction: fileP error of some kind");
-        console.log(err);
-        reject(err);
-      });
-  });
+  startReaderWorkerPool(); // eslint-disable-line no-use-before-define
 }
 
 function progressHandler(completed, total) {
@@ -779,30 +772,30 @@ function startReaderWorkerPool() {
 
   store.state.loadingExperiment = true;
 
-  readDataQueue.forEach(taskInfo => {
+  readDataQueue.forEach((taskInfo) => {
     taskArgsArray.push([taskInfo]);
   });
 
   readDataQueue = [];
 
-  const { runId, promise } = workerPool.runTasks(
+  const { runId, promise } = store.state.workerPool.runTasks(
     taskArgsArray,
-    progressHandler
+    progressHandler,
   );
   taskRunId = runId;
 
   promise
-    .then(results => {
+    .then((results) => {
       console.log(`WorkerPool finished with ${results.length} results`);
       taskRunId = -1;
     })
-    .catch(err => {
-      console.log("startReaderWorkerPool: workerPool error");
+    .catch((err) => {
+      console.log('startReaderWorkerPool: workerPool error');
       console.log(err);
     })
     .finally(() => {
       store.state.loadingExperiment = false;
-      workerPool.terminateWorkers();
+      store.state.workerPool.terminateWorkers();
     });
 }
 
@@ -811,10 +804,10 @@ function expandSessionRange(datasetId, dataRange) {
     const sessionId = store.state.datasets[datasetId].session;
     const session = store.state.sessions[sessionId];
     if (dataRange[0] < session.cumulativeRange[0]) {
-      session.cumulativeRange[0] = dataRange[0];
+      [session.cumulativeRange[0]] = dataRange;
     }
     if (dataRange[1] > session.cumulativeRange[1]) {
-      session.cumulativeRange[1] = dataRange[1];
+      [, session.cumulativeRange[1]] = dataRange;
     }
   }
 }

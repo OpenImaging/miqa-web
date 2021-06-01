@@ -1,21 +1,21 @@
 <script>
 // import { mapState, mapActions } from "vuex";
 
-import GenericNavigationBar from "@/components/GenericNavigationBar";
-import JSONConfig from "@/components/JSONConfig";
-import SiteConfig from "@/components/SiteConfig";
+import GenericNavigationBar from '@/components/GenericNavigationBar.vue';
+import JSONConfig from '@/components/JSONConfig.vue';
+import SiteConfig from '@/components/SiteConfig.vue';
 
 export default {
-  name: "Settings",
+  name: 'Settings',
   components: {
     GenericNavigationBar,
     JSONConfig,
-    SiteConfig
+    SiteConfig,
   },
-  inject: ["girderRest"],
+  inject: ['girderRest'],
   computed: {},
   created() {},
-  methods: {}
+  methods: {},
 };
 </script>
 

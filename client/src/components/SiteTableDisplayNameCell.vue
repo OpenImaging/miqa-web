@@ -1,20 +1,25 @@
 <script>
 export default {
-  name: "SiteTableDisplayNameCell",
-  props: ["value"],
+  name: 'SiteTableDisplayNameCell',
+  props: {
+    value: {
+      required: true,
+      type: String,
+    },
+  },
   data() {
     return {
-      displayName: "",
+      displayName: '',
       showMenu: false,
-      nameRules: [v => !!v || "Name is required"]
+      nameRules: [(v) => !!v || 'Name is required'],
     };
   },
   watch: {
     showMenu(value) {
       if (value) {
-        this.displayName = this.value || "";
+        this.displayName = this.value || '';
       }
-    }
+    },
   },
   methods: {
     save() {
@@ -22,12 +27,12 @@ export default {
         return;
       }
       this.showMenu = false;
-      this.$emit("input", this.displayName);
+      this.$emit('input', this.displayName);
     },
     cancel() {
       this.showMenu = false;
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -39,10 +44,18 @@ export default {
       class="v-small-dialog"
       lazy
     >
-      <div slot="activator">{{ value }}</div>
-      <v-form @submit.prevent="save" ref="form">
+      <div slot="activator">
+        {{ value }}
+      </div>
+      <v-form
+        ref="form"
+        @submit.prevent="save"
+      >
         <v-card>
-          <v-container grid-list-md class="py-2">
+          <v-container
+            grid-list-md
+            class="py-2"
+          >
             <v-layout>
               <v-flex>
                 <v-text-field
@@ -57,8 +70,19 @@ export default {
           </v-container>
           <v-card-actions>
             <v-spacer />
-            <v-btn text @click="cancel">Cancel</v-btn>
-            <v-btn color="primary" text type="submit">Save</v-btn>
+            <v-btn
+              text
+              @click="cancel"
+            >
+              Cancel
+            </v-btn>
+            <v-btn
+              color="primary"
+              text
+              type="submit"
+            >
+              Save
+            </v-btn>
           </v-card-actions>
         </v-card>
       </v-form>

@@ -1,28 +1,28 @@
-import Mousetrap from "mousetrap";
-import _ from "lodash";
+import Mousetrap from 'mousetrap';
+import _ from 'lodash';
 
 function bind(el, value, bindElement) {
-  var mousetrap = new Mousetrap(bindElement ? el : undefined);
+  const mousetrap = new Mousetrap(bindElement ? el : undefined);
   el.mousetrap = mousetrap;
   if (!_.isArray(value)) {
     value = [value];
   }
-  value.forEach(({ bind, handler, disabled }) => {
+  value.forEach(({ bind: bind_, handler, disabled }) => {
     const handlerType = typeof handler;
     if (!disabled) {
-      if (handlerType === "function") {
-        mousetrap.bind(bind, function() {
-          handler.apply(this, [el, ...arguments]);
+      if (handlerType === 'function') {
+        mousetrap.bind(bind_, (...params) => {
+          handler.apply(this, [el, ...params]);
         });
-      } else if (handlerType === "object") {
-        Object.keys(handler).forEach(eventType => {
+      } else if (handlerType === 'object') {
+        Object.keys(handler).forEach((eventType) => {
           const eventHandler = handler[eventType];
           mousetrap.bind(
-            bind,
-            function() {
-              eventHandler.apply(this, [el, ...arguments]);
+            bind_,
+            (...params) => {
+              eventHandler.apply(this, [el, ...params]);
             },
-            eventType
+            eventType,
           );
         });
       }
@@ -35,7 +35,7 @@ function unbind(el) {
 }
 
 export default function install(Vue) {
-  Vue.directive("mousetrap", {
+  Vue.directive('mousetrap', {
     inserted(el, { value, modifiers }) {
       bind(el, value, modifiers.element);
     },
@@ -45,6 +45,6 @@ export default function install(Vue) {
     },
     unbind(el) {
       unbind(el);
-    }
+    },
   });
 }

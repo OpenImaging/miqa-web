@@ -1,17 +1,20 @@
 <script>
 export default {
-  name: "NavbarTitle",
+  name: 'NavbarTitle',
   computed: {
     version() {
       return process.env.VERSION;
-    }
-  }
+    },
+  },
 };
 </script>
 
 <template>
   <v-toolbar-title>
-    <v-tooltip open-delay="2000" bottom>
+    <v-tooltip
+      open-delay="2000"
+      bottom
+    >
       <template #activator="{ on }">
         <span v-on="on">MIQA</span>
       </template>

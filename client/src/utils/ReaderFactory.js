@@ -1,10 +1,10 @@
-import { CancelToken } from "axios";
-import Promise from "bluebird";
+import { CancelToken } from 'axios';
+import Promise from 'bluebird';
 
 Promise.config({
   longStackTraces: false,
   warnings: false, // note, run node with --trace-warnings to see full stack traces for warnings,
-  cancellation: true
+  cancellation: true,
 });
 
 const READER_MAPPING = {};
@@ -14,10 +14,10 @@ const FETCH_DATA = {
     return axios
       .get(url, {
         cancelToken: source.token,
-        responseType: "arraybuffer"
+        responseType: 'arraybuffer',
       })
       .then(({ data }) => data);
-  }
+  },
 };
 
 function registerReader({
@@ -29,24 +29,22 @@ function registerReader({
   fileNameMethod,
   fileSeriesMethod,
   sourceType,
-  binary
+  binary,
 }) {
   READER_MAPPING[extension] = {
     name,
     vtkReader,
-    readMethod: readMethod || binary ? "readAsArrayBuffer" : "readAsText",
-    parseMethod: parseMethod || binary ? "parseAsArrayBuffer" : "parseAsText",
+    readMethod: readMethod || binary ? 'readAsArrayBuffer' : 'readAsText',
+    parseMethod: parseMethod || binary ? 'parseAsArrayBuffer' : 'parseAsText',
     fileNameMethod,
     fileSeriesMethod,
-    sourceType
+    sourceType,
   };
 }
 
 function getReader({ name }) {
   const lowerCaseName = name.toLowerCase();
-  const extToUse = Object.keys(READER_MAPPING).find(ext =>
-    lowerCaseName.endsWith(ext)
-  );
+  const extToUse = Object.keys(READER_MAPPING).find((ext) => lowerCaseName.endsWith(ext));
   return READER_MAPPING[extToUse];
 }
 
@@ -58,7 +56,7 @@ function readRawData({ fileName, data }) {
         vtkReader,
         parseMethod,
         fileNameMethod,
-        sourceType
+        sourceType,
       } = readerMapping;
       const reader = vtkReader.newInstance();
       if (fileNameMethod) {
@@ -66,9 +64,12 @@ function readRawData({ fileName, data }) {
       }
       const ds = reader[parseMethod](data);
       Promise.resolve(ds)
-        .then(dataset =>
-          resolve({ dataset, reader, sourceType, name: fileName })
-        )
+        .then((dataset) => resolve({
+          dataset,
+          reader,
+          sourceType,
+          name: fileName,
+        }))
         .catch(reject);
     } else {
       reject();
@@ -84,12 +85,12 @@ function readFile(file) {
       const io = new FileReader();
       io.onload = function onLoad() {
         readRawData({ fileName: file.name, data: io.result })
-          .then(result => resolve(result))
-          .catch(error => reject(error));
+          .then((result) => resolve(result))
+          .catch((error) => reject(error));
       };
       io[readMethod](file);
     } else {
-      reject(new Error("No reader mapping"));
+      reject(new Error('No reader mapping'));
     }
   });
 }
@@ -109,7 +110,7 @@ function downloadDataset(axios, fileName, url) {
       const { readMethod } = readerMapping;
       const source = CancelToken.source();
       FETCH_DATA[readMethod](axios, url, source)
-        .then(rawData => {
+        .then((rawData) => {
           if (rawData) {
             resolve(new File([rawData], fileName));
           } else {
@@ -117,8 +118,8 @@ function downloadDataset(axios, fileName, url) {
           }
         })
         .catch(reject);
-      onCancel(function() {
-        source.cancel("navigated away");
+      onCancel(() => {
+        source.cancel('navigated away');
       });
     } else {
       throw new Error(`No reader found for ${fileName}`);
@@ -129,5 +130,5 @@ function downloadDataset(axios, fileName, url) {
 export default {
   downloadDataset,
   loadFiles,
-  registerReader
+  registerReader,
 };

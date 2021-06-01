@@ -1,25 +1,25 @@
-import Prompt from "./Prompt";
+import Prompt from './Prompt.vue';
 
-export default function(vuetify) {
+export default function (vuetify) {
   return function install(Vue) {
     Prompt.vuetify = vuetify;
-    var PromptComponent = Vue.extend(Prompt);
-    var component = new PromptComponent();
-    Vue.prototype.$promptAttach = function() {
-      var div = document.createElement("div");
+    const PromptComponent = Vue.extend(Prompt);
+    const component = new PromptComponent();
+    Vue.prototype.$promptAttach = function prompt() {
+      const div = document.createElement('div');
       this.$el.appendChild(div);
       component.$mount(div);
       return this;
     };
-    Vue.prototype.$prompt = function({
+    Vue.prototype.$prompt = ({
       title,
       text,
-      positiveButton = "Confirm",
-      negativeButton = "Cancel",
-      confirm = false
-    } = {}) {
-      var resolve;
-      var p = new Promise(_resolve => {
+      positiveButton = 'Confirm',
+      negativeButton = 'Cancel',
+      confirm = false,
+    } = {}) => {
+      let resolve;
+      const p = new Promise((_resolve) => {
         resolve = _resolve;
       });
       function set() {
@@ -34,14 +34,14 @@ export default function(vuetify) {
       if (!component.$data.show) {
         set();
       } else {
-        var unwatch = component.$watch("show", () => {
+        const unwatch = component.$watch('show', () => {
           unwatch();
           set();
         });
       }
       return p;
     };
-    Vue.prototype.$prompt.hide = function() {
+    Vue.prototype.$prompt.hide = () => {
       component.$data.show = false;
     };
   };

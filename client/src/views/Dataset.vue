@@ -1,27 +1,29 @@
 <script>
-import _ from "lodash";
+import _ from 'lodash';
 
 import {
   NavigationFailureType,
-  isNavigationFailure
-} from "vue-router/src/util/errors";
-import Layout from "@/components/Layout.vue";
-import { mapState, mapActions, mapGetters, mapMutations } from "vuex";
+  isNavigationFailure,
+} from 'vue-router/src/util/errors';
+import Layout from '@/components/Layout.vue';
+import {
+  mapState, mapActions, mapGetters, mapMutations,
+} from 'vuex';
 
-import NavbarTitle from "@/components/NavbarTitle";
-import UserButton from "@/components/girder/UserButton";
-import DataImportExport from "../components/DataImportExport";
-import SessionsView from "@/components/SessionsView";
-import WindowControl from "@/components/WindowControl";
-import ScreenshotDialog from "@/components/ScreenshotDialog";
-import EmailDialog from "@/components/EmailDialog";
-import KeyboardShortcutDialog from "@/components/KeyboardShortcutDialog";
-import NavigationTabs from "@/components/NavigationTabs";
-import SessionTimer from "@/components/SessionTimer";
-import { cleanDatasetName } from "@/utils/helper";
+import NavbarTitle from '@/components/NavbarTitle.vue';
+import UserButton from '@/components/girder/UserButton.vue';
+import SessionsView from '@/components/SessionsView.vue';
+import WindowControl from '@/components/WindowControl.vue';
+import ScreenshotDialog from '@/components/ScreenshotDialog.vue';
+import EmailDialog from '@/components/EmailDialog.vue';
+import KeyboardShortcutDialog from '@/components/KeyboardShortcutDialog.vue';
+import NavigationTabs from '@/components/NavigationTabs.vue';
+import SessionTimer from '@/components/SessionTimer.vue';
+import { cleanDatasetName } from '@/utils/helper';
+import DataImportExport from '../components/DataImportExport.vue';
 
 export default {
-  name: "dataset",
+  name: 'Dataset',
   components: {
     NavbarTitle,
     UserButton,
@@ -33,11 +35,11 @@ export default {
     EmailDialog,
     KeyboardShortcutDialog,
     NavigationTabs,
-    SessionTimer
+    SessionTimer,
   },
-  inject: ["djangoRest", "userLevel"],
+  inject: ['djangoRest', 'userLevel'],
   data: () => ({
-    newNote: "",
+    newNote: '',
     decision: null,
     decisionChanged: false,
     unsavedDialog: false,
@@ -46,31 +48,31 @@ export default {
     showNotePopup: false,
     keyboardShortcutDialog: false,
     scanning: false,
-    direction: "forward",
+    direction: 'forward',
     advanceTimeoutId: null,
-    nextAnimRequest: null
+    nextAnimRequest: null,
   }),
   computed: {
     ...mapState([
-      "currentDatasetId",
-      "vtkViews",
-      "loadingDataset",
-      "errorLoadingDataset",
-      "drawer",
-      "screenshots",
-      "sessionCachedPercentage",
-      "sessionDatasets"
+      'currentDatasetId',
+      'vtkViews',
+      'loadingDataset',
+      'errorLoadingDataset',
+      'drawer',
+      'screenshots',
+      'sessionCachedPercentage',
+      'sessionDatasets',
     ]),
     ...mapGetters([
-      "nextDataset",
-      "getDataset",
-      "currentDataset",
-      "currentSession",
-      "previousDataset",
-      "firstDatasetInPreviousSession",
-      "firstDatasetInNextSession",
-      "getSiteDisplayName",
-      "getExperimentDisplayName"
+      'nextDataset',
+      'getDataset',
+      'currentDataset',
+      'currentSession',
+      'previousDataset',
+      'firstDatasetInPreviousSession',
+      'firstDatasetInNextSession',
+      'getSiteDisplayName',
+      'getExperimentDisplayName',
     ]),
     currentSessionDatasets() {
       return this.sessionDatasets[this.currentSession.id];
@@ -78,87 +80,86 @@ export default {
     notes() {
       if (this.currentSession) {
         return this.currentSession.notes;
-      } else {
-        return [];
       }
+      return [];
     },
     lastNoteTruncated() {
       if (this.notes.length > 0) {
         const lastNote = this.notes.slice(-1)[0];
         return `${lastNote.note.substring(0, 32)}...`;
       }
-      return "";
-    }
-  },
-  async created() {
-    this.debouncedDatasetSliderChange = _.debounce(
-      this.debouncedDatasetSliderChange,
-      30
-    );
-    await Promise.all([this.loadSessions(), this.loadSites()]);
-    var datasetId = this.$route.params.datasetId;
-    var dataset = this.getDataset(datasetId);
-    if (dataset) {
-      await this.swapToDataset(dataset);
-    } else {
-      this.$router.replace("/").catch(this.handleNavigationError);
-      this.setDrawer(true);
-    }
+      return '';
+    },
   },
   watch: {
     currentSession(session) {
       if (session) {
         this.decision = session.decision;
         this.decisionChanged = false;
-        this.newNote = "";
+        this.newNote = '';
       }
+    },
+  },
+  async created() {
+    this.debouncedDatasetSliderChange = _.debounce(
+      this.debouncedDatasetSliderChange,
+      30,
+    );
+    await Promise.all([this.loadSessions(), this.loadSites()]);
+    const { datasetId } = this.$route.params;
+    const dataset = this.getDataset(datasetId);
+    if (dataset) {
+      await this.swapToDataset(dataset);
+    } else {
+      this.$router.replace('/').catch(this.handleNavigationError);
+      this.setDrawer(true);
     }
   },
   async beforeRouteUpdate(to, from, next) {
-    let toDataset = this.getDataset(to.params.datasetId);
-    let result = await this.beforeLeaveSession(toDataset);
+    const toDataset = this.getDataset(to.params.datasetId);
+    const result = await this.beforeLeaveSession(toDataset);
     next(result);
     if (result && toDataset) {
       this.swapToDataset(toDataset);
     }
   },
   async beforeRouteLeave(to, from, next) {
-    let result = await this.beforeLeaveSession();
+    const result = await this.beforeLeaveSession();
     next(result);
   },
   methods: {
-    ...mapMutations(["setDrawer"]),
+    ...mapMutations(['setDrawer']),
     ...mapActions([
-      "loadSessions",
-      "reloadScan",
-      "loadSites",
-      "logout",
-      "swapToDataset"
+      'loadSessions',
+      'reloadScan',
+      'loadSites',
+      'logout',
+      'swapToDataset',
     ]),
     cleanDatasetName,
     handleNavigationError(fail) {
-      let failureType = "unknown";
+      let failureType = 'unknown';
       if (isNavigationFailure(fail, NavigationFailureType.redirected)) {
-        failureType = "redirected";
+        failureType = 'redirected';
       } else if (isNavigationFailure(fail, NavigationFailureType.aborted)) {
-        failureType = "aborted";
+        failureType = 'aborted';
       } else if (isNavigationFailure(fail, NavigationFailureType.cancelled)) {
-        failureType = "cancelled";
+        failureType = 'cancelled';
       } else if (isNavigationFailure(fail, NavigationFailureType.duplicated)) {
-        failureType = "duplicated";
+        failureType = 'duplicated';
       }
       this.scanning = false;
       console.log(`Caught navigation error (${failureType})`);
     },
-    async beforeLeaveSession(toDataset) {
-      let currentDataset = this.currentDataset;
+    beforeLeaveSession(toDataset) {
+      const { currentDataset } = this;
       if (
-        currentDataset &&
-        (!toDataset || toDataset.folderId !== this.currentDataset.folderId) &&
-        this.decisionChanged
+        currentDataset
+        && (!toDataset || toDataset.folderId !== this.currentDataset.folderId)
+        && this.decisionChanged
       ) {
         this.unsavedDialog = true;
-        return await new Promise(resolve => {
+        return new Promise((resolve) => {
           this.unsavedDialogResolve = resolve;
         });
       }
@@ -167,12 +168,12 @@ export default {
     async save() {
       if (this.newNote.trim()) {
         await this.djangoRest.addScanNote(this.currentSession.id, this.newNote);
-        this.newNote = "";
+        this.newNote = '';
       }
       if (this.decisionChanged) {
         await this.djangoRest.setDecision(
           this.currentSession.id,
-          this.decision
+          this.decision,
         );
         this.decisionChanged = false;
       }
@@ -207,20 +208,20 @@ export default {
         return;
       }
       if (this.firstDatasetInNextSession) {
-        var currentDatasetId = this.currentDatasetId;
+        const { currentDatasetId } = this;
         this.$router
           .push(this.firstDatasetInNextSession)
           .catch(this.handleNavigationError);
         this.$snackbar({
-          text: "Proceeded to next session",
-          button: "Go back",
+          text: 'Proceeded to next session',
+          button: 'Go back',
           timeout: 6000,
           immediate: true,
           callback: () => {
             this.$router
               .push(currentDatasetId)
               .catch(this.handleNavigationError);
-          }
+          },
         });
       }
     },
@@ -229,17 +230,17 @@ export default {
       e.preventDefault();
     },
     debouncedDatasetSliderChange(index) {
-      var datasetId = this.currentSessionDatasets[index];
+      const datasetId = this.currentSessionDatasets[index];
       this.$router.push(datasetId).catch(this.handleNavigationError);
     },
     updateImage() {
-      if (this.direction === "back") {
+      if (this.direction === 'back') {
         this.$router
-          .push(this.previousDataset ? this.previousDataset : "")
+          .push(this.previousDataset ? this.previousDataset : '')
           .catch(this.handleNavigationError);
       } else {
         this.$router
-          .push(this.nextDataset ? this.nextDataset : "")
+          .push(this.nextDataset ? this.nextDataset : '')
           .catch(this.handleNavigationError);
       }
     },
@@ -255,7 +256,7 @@ export default {
         this.direction = direction;
         this.updateImage();
         const self = this;
-        this.advanceTimeoutId = window.setTimeout(function() {
+        this.advanceTimeoutId = window.setTimeout(() => {
           window.requestAnimationFrame(self.advanceLoop);
         }, 300);
       }
@@ -270,29 +271,46 @@ export default {
         window.cancelAnimationFrame(this.nextAnimRequest);
         this.nextAnimRequest = null;
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
 <template>
-  <v-layout class="dataset" fill-height column>
-    <v-app-bar app dense>
+  <v-layout
+    class="dataset"
+    fill-height
+    column
+  >
+    <v-app-bar
+      app
+      dense
+    >
       <NavbarTitle />
       <NavigationTabs />
-      <v-spacer></v-spacer>
+      <v-spacer />
       <SessionTimer />
-      <v-btn icon class="mr-4" @click="keyboardShortcutDialog = true">
+      <v-btn
+        icon
+        class="mr-4"
+        @click="keyboardShortcutDialog = true"
+      >
         <v-icon>keyboard</v-icon>
       </v-btn>
       <v-btn
         icon
         class="mr-4"
-        @click="emailDialog = true"
         :disabled="!currentDataset"
+        @click="emailDialog = true"
       >
-        <v-badge :value="screenshots.length" right>
-          <span slot="badge" dark>{{ screenshots.length }}</span>
+        <v-badge
+          :value="screenshots.length"
+          right
+        >
+          <span
+            slot="badge"
+            dark
+          >{{ screenshots.length }}</span>
           <v-icon>email</v-icon>
         </v-badge>
       </v-btn>
@@ -306,11 +324,18 @@ export default {
       @input="setDrawer($event)"
     >
       <div class="sessions-bar">
-        <v-toolbar dense flat max-height="48px">
+        <v-toolbar
+          dense
+          flat
+          max-height="48px"
+        >
           <v-toolbar-title>Experiments</v-toolbar-title>
         </v-toolbar>
         <DataImportExport v-if="userLevel.value <= 2" />
-        <SessionsView class="mt-1" minimal />
+        <SessionsView
+          class="mt-1"
+          minimal
+        />
       </div>
     </v-navigation-drawer>
     <v-layout
@@ -326,7 +351,7 @@ export default {
         :width="4"
         :size="50"
         indeterminate
-      ></v-progress-circular>
+      />
     </v-layout>
     <template v-if="currentDataset">
       <v-flex class="layout-container">
@@ -337,11 +362,20 @@ export default {
           justify-center
           fill-height
         >
-          <div class="title">Error loading this dataset</div>
+          <div class="title">
+            Error loading this dataset
+          </div>
         </v-layout>
       </v-flex>
-      <v-flex shrink class="bottom">
-        <v-container fluid grid-list-sm class="pa-2">
+      <v-flex
+        shrink
+        class="bottom"
+      >
+        <v-container
+          fluid
+          grid-list-sm
+          class="pa-2"
+        >
           <v-layout>
             <v-flex
               xs4
@@ -351,12 +385,6 @@ export default {
               <v-layout align-center>
                 <v-flex shrink>
                   <v-btn
-                    fab
-                    small
-                    class="primary--text my-0 elevation-2 smaller"
-                    :disabled="!previousDataset"
-                    v-on:mousedown="handleMouseDown('back')"
-                    v-on:mouseup="handleMouseUp()"
                     v-mousetrap="{
                       bind: 'left',
                       disabled:
@@ -368,24 +396,22 @@ export default {
                         keyup: handleMouseUp
                       }
                     }"
+                    fab
+                    small
+                    class="primary--text my-0 elevation-2 smaller"
+                    :disabled="!previousDataset"
+                    @mousedown="handleMouseDown('back')"
+                    @mouseup="handleMouseUp()"
                   >
                     <v-icon>keyboard_arrow_left</v-icon>
                   </v-btn>
                 </v-flex>
                 <v-flex style="text-align: center;">
-                  <span
-                    >{{ currentDataset.index + 1 }} of
-                    {{ currentSessionDatasets.length }}</span
-                  >
+                  <span>{{ currentDataset.index + 1 }} of
+                    {{ currentSessionDatasets.length }}</span>
                 </v-flex>
                 <v-flex shrink>
                   <v-btn
-                    fab
-                    small
-                    class="primary--text my-0 elevation-2 smaller"
-                    :disabled="!nextDataset"
-                    v-on:mousedown="handleMouseDown('forward')"
-                    v-on:mouseup="handleMouseUp()"
                     v-mousetrap="{
                       bind: 'right',
                       disabled: !nextDataset || unsavedDialog || loadingDataset,
@@ -396,6 +422,12 @@ export default {
                         keyup: handleMouseUp
                       }
                     }"
+                    fab
+                    small
+                    class="primary--text my-0 elevation-2 smaller"
+                    :disabled="!nextDataset"
+                    @mousedown="handleMouseDown('forward')"
+                    @mouseup="handleMouseUp()"
                   >
                     <v-icon>chevron_right</v-icon>
                   </v-btn>
@@ -419,10 +451,13 @@ export default {
                     :height="24"
                     :value="currentDataset.index + 1"
                     @input="debouncedDatasetSliderChange($event - 1)"
-                  ></v-slider>
+                  />
                 </v-flex>
               </v-layout>
-              <v-layout align-center class="bottom-row ml-3 mr-1">
+              <v-layout
+                align-center
+                class="bottom-row ml-3 mr-1"
+              >
                 <v-row justify="start">
                   <v-btn
                     fab
@@ -458,42 +493,60 @@ export default {
                 </v-row>
               </v-layout>
             </v-flex>
-            <v-flex xs4 class="mx-2">
+            <v-flex
+              xs4
+              class="mx-2"
+            >
               <v-container class="pa-0">
                 <v-row>
-                  <v-col cols="12" class="pb-1 pt-0">
+                  <v-col
+                    cols="12"
+                    class="pb-1 pt-0"
+                  >
                     <v-container class="pa-0">
                       <v-row>
-                        <v-col cols="3" class="pb-1 pt-0">
+                        <v-col
+                          cols="3"
+                          class="pb-1 pt-0"
+                        >
                           Site
                         </v-col>
-                        <v-col cols="9" class="pb-1 pt-0 justifyRight">
+                        <v-col
+                          cols="9"
+                          class="pb-1 pt-0 justifyRight"
+                        >
                           {{ getSiteDisplayName(currentSession.site) }}
                         </v-col>
                       </v-row>
                       <v-row>
-                        <v-col cols="3" class="pb-1 pt-0">
+                        <v-col
+                          cols="3"
+                          class="pb-1 pt-0"
+                        >
                           Experiment
                         </v-col>
-                        <v-col cols="9" class="pb-1 pt-0 justifyRight">
-                          <a
-                            :href="
-                              `/xnat/app/action/DisplayItemAction/search_value/${currentSession.experiment}/search_element/  xnat:mrSessionData/      search_field/xnat:mrSessionData.ID`
-                            "
-                            target="_blank"
-                            >{{
-                              getExperimentDisplayName(
-                                currentSession.experiment
-                              )
-                            }}</a
-                          >
+                        <v-col
+                          cols="9"
+                          class="pb-1 pt-0 justifyRight"
+                        >
+                          {{
+                            getExperimentDisplayName(
+                              currentSession.experiment
+                            )
+                          }}
                         </v-col>
                       </v-row>
                       <v-row>
-                        <v-col cols="3" class="pb-1 pt-0">
+                        <v-col
+                          cols="3"
+                          class="pb-1 pt-0"
+                        >
                           Scan
                         </v-col>
-                        <v-col cols="9" class="pb-1 pt-0 justifyRight">
+                        <v-col
+                          cols="9"
+                          class="pb-1 pt-0 justifyRight"
+                        >
                           {{ currentSession.name }}
                         </v-col>
                       </v-row>
@@ -501,36 +554,46 @@ export default {
                   </v-col>
                 </v-row>
                 <v-row>
-                  <v-col class="pb-1 pt-0" cols="10">
+                  <v-col
+                    class="pb-1 pt-0"
+                    cols="10"
+                  >
                     Note history: {{ lastNoteTruncated }}
                   </v-col>
-                  <v-col class="pb-1 pt-0" cols="1">
+                  <v-col
+                    class="pb-1 pt-0"
+                    cols="1"
+                  >
                     <v-menu
+                      ref="historyMenu"
                       v-model="showNotePopup"
                       :close-on-content-click="false"
                       offset-y
                       open-on-hover
                       top
                       left
-                      ref="historyMenu"
                     >
                       <template v-slot:activator="{ on }">
                         <v-btn
+                          v-mousetrap="{
+                            bind: 'h',
+                            handler: () => (showNotePopup = !showNotePopup)
+                          }"
                           text
                           small
                           icon
                           :disabled="notes.length < 1"
                           class="ma-0"
                           v-on="on"
-                          v-mousetrap="{
-                            bind: 'h',
-                            handler: () => (showNotePopup = !showNotePopup)
-                          }"
-                          ><v-icon>arrow_drop_up</v-icon></v-btn
                         >
+                          <v-icon>arrow_drop_up</v-icon>
+                        </v-btn>
                       </template>
                       <v-card>
-                        <v-list-item v-for="note in notes" :key="note.id">
+                        <v-list-item
+                          v-for="note in notes"
+                          :key="note.id"
+                        >
                           <v-list-item-content class="note-history">
                             <v-list-item-title class="grey--text darken-2">
                               {{ note.creator.first_name }}
@@ -543,24 +606,33 @@ export default {
                     </v-menu>
                   </v-col>
                 </v-row>
-                <v-row class="pb-1 pt-1" v-if="userLevel.value <= 2">
-                  <v-col cols="11" class="pb-1 pt-0 pr-0">
+                <v-row
+                  v-if="userLevel.value <= 2"
+                  class="pb-1 pt-1"
+                >
+                  <v-col
+                    cols="11"
+                    class="pb-1 pt-0 pr-0"
+                  >
                     <v-text-field
-                      class="note-field"
-                      label="Note"
-                      solo
-                      hide-details
-                      @input="setNote($event)"
-                      :value="this.newNote"
                       ref="note"
                       v-mousetrap="{ bind: 'n', handler: focusNote }"
                       v-mousetrap.element="{
                         bind: 'esc',
                         handler: () => $refs.note.blur()
                       }"
-                    ></v-text-field>
+                      class="note-field"
+                      label="Note"
+                      solo
+                      hide-details
+                      :value="newNote"
+                      @input="setNote($event)"
+                    />
                   </v-col>
-                  <v-col cols="1" class="pb-1 pt-0">
+                  <v-col
+                    cols="1"
+                    class="pb-1 pt-0"
+                  >
                     <v-tooltip top>
                       <template v-slot:activator="{ on }">
                         <v-btn
@@ -581,72 +653,89 @@ export default {
                   </v-col>
                 </v-row>
                 <v-row
+                  v-if="userLevel.value <= 2"
                   no-gutters
                   justify="space-between"
                   class="pb-1"
-                  v-if="userLevel.value <= 2"
                 >
-                  <v-col cols="6" class="pb-1 pt-0">
+                  <v-col
+                    cols="6"
+                    class="pb-1 pt-0"
+                  >
                     <v-btn-toggle
-                      class="buttons"
                       v-model="decision"
+                      class="buttons"
                       @change="onDecisionChanged"
                     >
                       <v-btn
+                        v-mousetrap="{
+                          bind: 'b',
+                          handler: () => setDecision('BAD')
+                        }"
                         text
                         small
                         value="BAD"
                         color="red"
                         :disabled="!newNote && !notes"
-                        v-mousetrap="{
-                          bind: 'b',
-                          handler: () => setDecision('BAD')
-                        }"
-                        >Bad</v-btn
                       >
+                        Bad
+                      </v-btn>
                       <v-btn
-                        text
-                        small
-                        value="GOOD"
-                        color="green"
                         v-mousetrap="{
                           bind: 'g',
                           handler: () => setDecision('GOOD')
                         }"
-                        >Good</v-btn
-                      >
-                      <v-btn
                         text
                         small
-                        value="USABLE_EXTRA"
-                        color="light-green"
+                        value="GOOD"
+                        color="green"
+                      >
+                        Good
+                      </v-btn>
+                      <v-btn
                         v-mousetrap="{
                           bind: 'u',
                           handler: () => setDecision('USABLE_EXTRA')
                         }"
-                        >Extra</v-btn
+                        text
+                        small
+                        value="USABLE_EXTRA"
+                        color="light-green"
                       >
+                        Extra
+                      </v-btn>
                     </v-btn-toggle>
                   </v-col>
-                  <v-col cols="2" class="pb-1 pt-0">
+                  <v-col
+                    cols="2"
+                    class="pb-1 pt-0"
+                  >
                     <v-btn
+                      v-mousetrap="{ bind: 'alt+s', handler: save }"
                       color="primary"
                       class="ma-0"
                       style="height: 36px"
                       small
                       :disabled="!decisionChanged && !newNote"
                       @click="save"
-                      v-mousetrap="{ bind: 'alt+s', handler: save }"
                     >
                       Save
-                      <v-icon right>save</v-icon>
+                      <v-icon right>
+                        save
+                      </v-icon>
                     </v-btn>
                   </v-col>
                 </v-row>
               </v-container>
             </v-flex>
-            <v-flex xs4 class="mx-2">
-              <WindowControl v-if="vtkViews.length" class="py-0" />
+            <v-flex
+              xs4
+              class="mx-2"
+            >
+              <WindowControl
+                v-if="vtkViews.length"
+                class="py-0"
+              />
             </v-flex>
           </v-layout>
         </v-container>
@@ -658,39 +747,53 @@ export default {
       justify-center
       fill-height
     >
-      <div class="title">Select a session</div>
+      <div class="title">
+        Select a session
+      </div>
     </v-layout>
-    <v-dialog v-model="unsavedDialog" persistent max-width="400">
+    <v-dialog
+      v-model="unsavedDialog"
+      persistent
+      max-width="400"
+    >
       <v-card>
-        <v-card-title class="title">Review is not saved</v-card-title>
+        <v-card-title class="title">
+          Review is not saved
+        </v-card-title>
         <v-card-text>Do you want save before continue?</v-card-text>
         <v-card-actions>
-          <v-spacer></v-spacer>
+          <v-spacer />
           <v-btn
+            v-mousetrap="{ bind: 'y', handler: el => el.focus() }"
             text
             color="primary"
             @click="unsavedDialogYes"
-            v-mousetrap="{ bind: 'y', handler: el => el.focus() }"
-            >Yes</v-btn
           >
+            Yes
+          </v-btn>
           <v-btn
+            v-mousetrap="{ bind: 'n', handler: el => el.focus() }"
             text
             color="primary"
             @click="unsavedDialogNo"
-            v-mousetrap="{ bind: 'n', handler: el => el.focus() }"
-            >no</v-btn
           >
+            no
+          </v-btn>
           <v-btn
+            v-mousetrap="{ bind: 'esc', handler: unsavedDialogCancel }"
             text
             @click="unsavedDialogCancel"
-            v-mousetrap="{ bind: 'esc', handler: unsavedDialogCancel }"
-            >Cancel</v-btn
           >
+            Cancel
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
     <ScreenshotDialog />
-    <EmailDialog v-model="emailDialog" :notes="notes" />
+    <EmailDialog
+      v-model="emailDialog"
+      :notes="notes"
+    />
     <KeyboardShortcutDialog v-model="keyboardShortcutDialog" />
   </v-layout>
 </template>

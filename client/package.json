@@ -10,8 +10,10 @@
   "dependencies": {
     "@girder/components": "git+https://github.com/girder/girder_web_components.git#v3.0.2",
     "@girder/oauth-client": "^0.7.7",
+    "axios": "^0.21.1",
     "bluebird": "^3.5.5",
     "itk": "14.0.0",
+    "lodash": "^4.17.21",
     "mousetrap": "scottwittenburg/mousetrap#fix-listener-leak",
     "vtk.js": "14.16.5",
     "vue": "^2.6.10",
@@ -29,6 +31,7 @@
     "@vue/cli-plugin-babel": "^3.3.0",
     "@vue/cli-plugin-eslint": "^3.3.0",
     "@vue/cli-service": "^4.5.12",
+    "@vue/eslint-config-airbnb": "^5.3.0",
     "@vue/eslint-config-prettier": "^4.0.1",
     "babel-eslint": "^10.0.1",
     "copy-webpack-plugin": "^4.6.0",
@@ -44,6 +47,7 @@
     "vue-cli-plugin-vuetify": "^2.0.7",
     "vue-template-compiler": "^2.6.8",
     "vuetify-loader": "^1.6.0",
+    "webpack": "^4.46.0",
     "worker-loader": "^2.0.0"
   }
 }

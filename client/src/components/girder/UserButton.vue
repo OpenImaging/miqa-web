@@ -1,7 +1,7 @@
 <script>
 export default {
-  name: "UserButton",
-  inject: ["girderRest"],
+  name: 'UserButton',
+  inject: ['girderRest'],
   computed: {
     initials() {
       const first = this.girderRest.user.firstName;
@@ -9,8 +9,8 @@ export default {
       return (
         first.charAt(0).toLocaleUpperCase() + last.charAt(0).toLocaleUpperCase()
       );
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -26,7 +26,11 @@ export default {
       {{ initials }}
     </v-avatar>
   </v-btn>
-  <v-btn v-else text @click="$emit('login')">
+  <v-btn
+    v-else
+    text
+    @click="$emit('login')"
+  >
     Login
   </v-btn>
 </template>
