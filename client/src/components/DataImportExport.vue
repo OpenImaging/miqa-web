@@ -48,7 +48,7 @@ export default {
         this.$snackbar({
           text: 'Import failed. Refer to server logs for details.',
         });
-        console.error(ex.response);
+        console.error(ex);
       }
       this.importDialog = false;
     },

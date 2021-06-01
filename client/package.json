@@ -37,6 +37,7 @@
     "copy-webpack-plugin": "^4.6.0",
     "core-js": "^2.6.5",
     "eslint": "^5.8.0",
+    "eslint-plugin-import": "^2.23.4",
     "eslint-plugin-vue": "^5.0.0",
     "pug": "^3.0.1",
     "pug-loader": "^2.4.0",
