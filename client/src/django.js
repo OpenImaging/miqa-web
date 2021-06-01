@@ -29,6 +29,9 @@ const djangoClient = new Vue({
       await oauthClient.logout();
       this.user = null;
     },
+    async import(sessionId) {
+      await apiClient.post(`/sessions/${sessionId}/import`);
+    },
     async sessions() {
       const { data } = await apiClient.get('/sessions');
       const { results } = data;
