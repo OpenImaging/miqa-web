@@ -549,6 +549,8 @@ const store = new Vuex.Store({
         };
 
         // Web sessions == Django scans
+        // TODO these requests *can* be run in parallel, or collapsed into one XHR
+        // eslint-disable-next-line no-await-in-loop
         const scans = await djangoRest.scans(experiment.id);
         for (let j = 0; j < scans.length; j += 1) {
           const scan = scans[j];
@@ -556,6 +558,8 @@ const store = new Vuex.Store({
           state.experimentSessions[experiment.id].push(scan.id);
 
           // Web datasets == Django images
+          // TODO these requests *can* be run in parallel, or collapsed into one XHR
+          // eslint-disable-next-line no-await-in-loop
           const images = await djangoRest.images(scan.id);
 
           state.sessions[scan.id] = {
