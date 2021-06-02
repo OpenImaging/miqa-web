@@ -50,13 +50,15 @@ if (process.env.NODE_ENV === 'production') {
   console.log = () => { };
 }
 
-djangoRest.restoreLogin().then((user) => {
+djangoRest.restoreLogin().then(async () => {
+  let user = await djangoRest.me();
+
   new Vue({
     vuetify,
     router,
     store,
-    render: (h) => h(App),
-    provide: { girderRest: girder.rest, djangoRest },
+    render: h => h(App),
+    provide: { girderRest: girder.rest, djangoRest, user }
   })
     .$mount('#app')
     .$snackbarAttach()

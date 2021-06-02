@@ -1,25 +1,13 @@
 <script>
-import { mapGetters } from 'vuex';
-
 export default {
-  name: 'UserButton',
-  inject: ['girderRest'],
-  computed: {
-    initials() {
-      const first = this.girderRest.user.firstName;
-      const last = this.girderRest.user.lastName;
-      return (
-        first.charAt(0).toLocaleUpperCase() + last.charAt(0).toLocaleUpperCase()
-      );
-    },
-    ...mapGetters(['currentUser']),
-  },
+  name: "UserButton",
+  inject: ["user"]
 };
 </script>
 
 <template>
   <v-btn
-    v-if="true"
+    v-if="user"
     icon
     color="black lighten-1"
     class="mr-4"
