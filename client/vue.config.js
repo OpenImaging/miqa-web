@@ -48,4 +48,5 @@ module.exports = {
       .use()
       .loader('shader-loader');
   },
+  lintOnSave: false
 };

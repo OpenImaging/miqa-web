@@ -606,7 +606,8 @@ const store = new Vuex.Store({
       console.log("start benchmark");
       let t0 = performance.now();
       
-      const [session,] = await djangoRest.sessions();
+      let [session,] = await djangoRest.sessions();
+      session = await djangoRest.session(session.id);
 
       let t1 = performance.now();
       console.log("Finished data request", t1-t0);
