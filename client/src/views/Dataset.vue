@@ -5,17 +5,19 @@ import {
   NavigationFailureType,
   isNavigationFailure,
 } from 'vue-router/src/util/errors';
-import Layout from '@/components/Layout.vue';
+
 import {
   mapState, mapActions, mapGetters, mapMutations,
 } from 'vuex';
 
+import Layout from '@/components/Layout.vue';
 import NavbarTitle from '@/components/NavbarTitle.vue';
 import UserButton from '@/components/girder/UserButton.vue';
 import SessionsView from '@/components/SessionsView.vue';
 import WindowControl from '@/components/WindowControl.vue';
 import ScreenshotDialog from '@/components/ScreenshotDialog.vue';
 import EmailDialog from '@/components/EmailDialog.vue';
+import TimeoutDialog from '@/components/TimeoutDialog.vue';
 import KeyboardShortcutDialog from '@/components/KeyboardShortcutDialog.vue';
 import NavigationTabs from '@/components/NavigationTabs.vue';
 import SessionTimer from '@/components/SessionTimer.vue';
@@ -33,6 +35,7 @@ export default {
     WindowControl,
     ScreenshotDialog,
     EmailDialog,
+    TimeoutDialog,
     KeyboardShortcutDialog,
     NavigationTabs,
     SessionTimer,
@@ -802,6 +805,7 @@ export default {
       v-model="emailDialog"
       :notes="notes"
     />
+    <TimeoutDialog />
     <KeyboardShortcutDialog v-model="keyboardShortcutDialog" />
   </v-layout>
 </template>
