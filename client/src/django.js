@@ -80,10 +80,10 @@ const djangoClient = new Vue({
       return results;
     },
     async me() {
-      const resp = await apiClient.get("/users/me");
+      const resp = await apiClient.get('/users/me');
       return resp.status === 204 ? null : resp.data;
-    }
-  }
+    },
+  },
 });
 
 export default djangoClient;

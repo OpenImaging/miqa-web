@@ -140,7 +140,7 @@ export default {
     cleanDatasetName,
     async logoutUser() {
       await this.logout();
-      this.$router.go("/"); // trigger re-render into oauth flow
+      this.$router.go('/'); // trigger re-render into oauth flow
     },
     handleNavigationError(fail) {
       let failureType = 'unknown';

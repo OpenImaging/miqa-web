@@ -1,7 +1,7 @@
 <script>
 export default {
-  name: "UserButton",
-  inject: ["user"]
+  name: 'UserButton',
+  inject: ['user'],
 };
 </script>
 
