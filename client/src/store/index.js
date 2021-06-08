@@ -556,7 +556,7 @@ const store = new Vuex.Store({
             numDatasets: images.length,
             site: scan.site,
             notes: scan.notes,
-            decisions: scan.decisions
+            decisions: scan.decisions,
             // folderId: sessionId,
             // meta: Object.assign({}, session.meta),
           };
@@ -606,8 +606,8 @@ const store = new Vuex.Store({
           numDatasets: images.length,
           site: scan.site,
           notes: scan.notes,
-          decisions: scan.decisions
-        }
+          decisions: scan.decisions,
+        },
       });
     },
     async setCurrentImage({ commit, dispatch }, imageId) {

@@ -94,7 +94,8 @@ export default {
   watch: {
     currentSession(session) {
       if (session) {
-        this.decision = session.decision;
+        const last = _.last(session.decisions);
+        this.decision = last ? last.decision : null;
         this.decisionChanged = false;
         this.newNote = '';
       }
@@ -113,16 +114,6 @@ export default {
     } else {
       this.$router.replace('/').catch(this.handleNavigationError);
       this.setDrawer(true);
-    }
-  },
-  watch: {
-    currentSession(session) {
-      if (session) {
-        let last = _.last(session.decisions);
-        this.decision = last ? last.decision : null;
-        this.decisionChanged = false;
-        this.newNote = "";
-      }
     }
   },
   async beforeRouteUpdate(to, from, next) {
@@ -212,14 +203,14 @@ export default {
       this.newNote = e;
     },
     async onDecisionChanged() {
-      let last = _.last(this.currentSession.decisions);
-      let lastDecision = last ? last.decision : null;
-      if (this.decision && this.decision != lastDecision) {
+      const last = _.last(this.currentSession.decisions);
+      const lastDecision = last ? last.decision : null;
+      if (this.decision && this.decision !== lastDecision) {
         this.decisionChanged = true;
         return;
-      } else {
-        this.decisionChanged = false;
       }
+      this.decisionChanged = false;
+
       if (this.firstDatasetInNextSession) {
         const { currentDatasetId } = this;
         this.$router
