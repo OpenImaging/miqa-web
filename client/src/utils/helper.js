@@ -1,7 +1,8 @@
+// eslint-disable-next-line import/prefer-default-export
 export function cleanDatasetName(name) {
-  let cleanName = name.replace(/^image/, "").replace(/.nii.gz$/, "");
-  if (cleanName == "") {
-    return "1";
+  const cleanName = name.replace(/^image/, '').replace(/.nii.gz$/, '');
+  if (cleanName === '') {
+    return '1';
   }
   return cleanName;
 }

@@ -1,26 +1,26 @@
-import Snackbar from "./Snackbar";
+import Snackbar from './Snackbar.vue';
 
-export default function(vuetify) {
+export default function (vuetify) {
   return function install(Vue) {
     Snackbar.vuetify = vuetify;
-    var SnackbarComponent = Vue.extend(Snackbar);
-    var component = new SnackbarComponent();
-    Vue.prototype.$snackbarAttach = function(options) {
+    const SnackbarComponent = Vue.extend(Snackbar);
+    const component = new SnackbarComponent();
+    Vue.prototype.$snackbarAttach = function attach(options) {
       if (options) {
         component.$data.options = options;
       }
-      var div = document.createElement("div");
+      const div = document.createElement('div');
       this.$el.appendChild(div);
       component.$mount(div);
       return this;
     };
-    Vue.prototype.$snackbar = function({
+    Vue.prototype.$snackbar = ({
       text,
       button,
       callback,
       timeout,
-      immediate
-    }) {
+      immediate,
+    }) => {
       function set() {
         component.$data.text = text;
         component.$data.button = button;
@@ -30,22 +30,20 @@ export default function(vuetify) {
       }
       if (!component.$data.show) {
         set();
+      } else if (immediate) {
+        component.$data.show = false;
+        setTimeout(set, 0);
       } else {
-        if (immediate) {
-          component.$data.show = false;
-          setTimeout(set, 0);
-        } else {
-          var unwatch = component.$watch("show", () => {
-            unwatch();
-            set();
-          });
-        }
+        const unwatch = component.$watch('show', () => {
+          unwatch();
+          set();
+        });
       }
     };
-    Vue.prototype.$snackbar.hide = function() {
+    Vue.prototype.$snackbar.hide = () => {
       component.$data.show = false;
     };
-    Vue.prototype.$snackbar.setOptions = function(options) {
+    Vue.prototype.$snackbar.setOptions = (options) => {
       component.$data.options = options;
     };
   };

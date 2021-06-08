@@ -1,18 +1,23 @@
 <script>
-import _ from "lodash";
+import _ from 'lodash';
 
 export default {
-  name: "SiteTableContactCell",
-  props: ["value"],
+  name: 'SiteTableContactCell',
+  props: {
+    value: {
+      required: true,
+      type: Array,
+    },
+  },
   data() {
     return {
       contacts: [],
       showMenu: false,
-      nameRules: [v => !!v || "Name is required"],
+      nameRules: [(v) => !!v || 'Name is required'],
       emailRules: [
-        v => !!v || "E-mail is required",
-        v => /.+@.+/.test(v) || "E-mail must be valid"
-      ]
+        (v) => !!v || 'E-mail is required',
+        (v) => /.+@.+/.test(v) || 'E-mail must be valid',
+      ],
     };
   },
   watch: {
@@ -20,11 +25,11 @@ export default {
       if (value) {
         this.contacts = _.cloneDeep(this.value) || [];
       }
-    }
+    },
   },
   methods: {
     add() {
-      this.contacts.push({ mode: "to", name: "", email: "" });
+      this.contacts.push({ mode: 'to', name: '', email: '' });
     },
     remove(contact) {
       this.contacts.splice(this.contacts.indexOf(contact), 1);
@@ -34,12 +39,12 @@ export default {
         return;
       }
       this.showMenu = false;
-      this.$emit("input", this.contacts);
+      this.$emit('input', this.contacts);
     },
     cancel() {
       this.showMenu = false;
-    }
-  }
+    },
+  },
 };
 </script>
 
@@ -55,25 +60,38 @@ export default {
       class="v-small-dialog"
     >
       <div slot="activator">
-        <div v-for="(contact, i) in value" :key="i">
+        <div
+          v-for="(contact, i) in value"
+          :key="i"
+        >
           {{ contact.mode }}: {{ contact.name }} ({{ contact.email }})
         </div>
       </div>
-      <v-form @submit.prevent="save" ref="form">
+      <v-form
+        ref="form"
+        @submit.prevent="save"
+      >
         <v-card>
-          <v-container grid-list-md class="pb-0">
+          <v-container
+            grid-list-md
+            class="pb-0"
+          >
             <v-layout v-if="!contacts.length">
               <v-flex>
                 No contacts
               </v-flex>
             </v-layout>
-            <v-layout v-for="(contact, i) in contacts" :key="i" align-center>
+            <v-layout
+              v-for="(contact, i) in contacts"
+              :key="i"
+              align-center
+            >
               <v-flex shrink>
                 <v-select
-                  :items="['to', 'cc', 'bcc']"
                   v-model="contact.mode"
+                  :items="['to', 'cc', 'bcc']"
                   style="width:50px"
-                ></v-select>
+                />
               </v-flex>
               <v-flex shrink>
                 <v-text-field
@@ -97,7 +115,12 @@ export default {
                 />
               </v-flex>
               <v-flex shrink>
-                <v-btn text icon color="primary" @click="remove(contact)">
+                <v-btn
+                  text
+                  icon
+                  color="primary"
+                  @click="remove(contact)"
+                >
                   <v-icon>remove_circle</v-icon>
                 </v-btn>
               </v-flex>
@@ -105,7 +128,12 @@ export default {
             <v-layout>
               <v-spacer />
               <v-flex shrink>
-                <v-btn text icon color="primary" @click="add">
+                <v-btn
+                  text
+                  icon
+                  color="primary"
+                  @click="add"
+                >
                   <v-icon>add_circle</v-icon>
                 </v-btn>
               </v-flex>
@@ -113,8 +141,19 @@ export default {
           </v-container>
           <v-card-actions>
             <v-spacer />
-            <v-btn text @click="cancel">Cancel</v-btn>
-            <v-btn color="primary" text type="submit">Save</v-btn>
+            <v-btn
+              text
+              @click="cancel"
+            >
+              Cancel
+            </v-btn>
+            <v-btn
+              color="primary"
+              text
+              type="submit"
+            >
+              Save
+            </v-btn>
           </v-card-actions>
         </v-card>
       </v-form>

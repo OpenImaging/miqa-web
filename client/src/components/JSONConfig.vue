@@ -1,16 +1,16 @@
 <script>
 export default {
-  name: "JSONConfig",
-  inject: ["girderRest"],
+  name: 'JSONConfig',
+  inject: ['girderRest'],
   data: () => ({
-    importpath: "",
-    exportpath: "",
+    importpath: '',
+    exportpath: '',
     changed: false,
-    importpathError: "",
-    exportpathError: ""
+    importpathError: '',
+    exportpathError: '',
   }),
   async created() {
-    var { data: result } = await this.girderRest.get("miqa_setting/datapath");
+    const { data: result } = await this.girderRest.get('miqa_setting/datapath');
     this.importpath = result.importpath;
     this.exportpath = result.exportpath;
   },
@@ -20,37 +20,43 @@ export default {
         return;
       }
       try {
-        await this.girderRest.post("miqa_setting/datapath", {
+        await this.girderRest.post('miqa_setting/datapath', {
           importpath: this.importpath,
-          exportpath: this.exportpath
+          exportpath: this.exportpath,
         });
         this.changed = false;
       } catch (e) {
-        var message = e.response.data.message;
-        if (message.includes("import")) {
+        const { message } = e.response.data;
+        if (message.includes('import')) {
           this.importpathError = message;
         } else {
           this.exportpathError = message;
         }
         setTimeout(() => {
-          this.importpathError = "";
-          this.exportpathError = "";
+          this.importpathError = '';
+          this.exportpathError = '';
         }, 3000);
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
 <template>
-  <v-form ref="form" @submit.prevent="save">
+  <v-form
+    ref="form"
+    @submit.prevent="save"
+  >
     <v-layout wrap>
-      <v-flex lg6 sm8 xs12>
+      <v-flex
+        lg6
+        sm8
+        xs12
+      >
         <v-text-field
+          v-model="importpath"
           label="Import path"
           placeholder=" "
-          v-model="importpath"
-          @input="changed = true"
           autocomplete="on"
           name="miqa-json-importpath"
           :rules="[
@@ -61,13 +67,18 @@ export default {
               'Needs to be a json or csv file'
           ]"
           :error-messages="importpathError"
-      /></v-flex>
-      <v-flex lg6 sm8 xs12>
+          @input="changed = true"
+        />
+      </v-flex>
+      <v-flex
+        lg6
+        sm8
+        xs12
+      >
         <v-text-field
+          v-model="exportpath"
           label="Export path"
           placeholder=" "
-          v-model="exportpath"
-          @input="changed = true"
           autocomplete="on"
           name="miqa-json-exportpath"
           :rules="[
@@ -78,11 +89,18 @@ export default {
               'Needs to be a json or csv file'
           ]"
           :error-messages="exportpathError"
-      /></v-flex>
+          @input="changed = true"
+        />
+      </v-flex>
     </v-layout>
     <v-layout>
       <v-flex>
-        <v-btn type="submit" color="primary" class="mx-0" :disabled="!changed">
+        <v-btn
+          type="submit"
+          color="primary"
+          class="mx-0"
+          :disabled="!changed"
+        >
           Save
         </v-btn>
       </v-flex>

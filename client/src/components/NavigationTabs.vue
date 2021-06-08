@@ -1,28 +1,31 @@
 <script>
-import { mapState, mapMutations } from "vuex";
+import { mapState, mapMutations } from 'vuex';
 
-import { GIRDER_URL } from "../constants";
+import { GIRDER_URL } from '../constants';
 
 export default {
-  name: "NavigationTabs",
-  inject: ["girderRest", "userLevel"],
+  name: 'NavigationTabs',
+  inject: ['girderRest', 'userLevel'],
   data: () => ({
-    GIRDER_URL
+    GIRDER_URL,
   }),
   computed: {
-    ...mapState(["currentDatasetId"])
+    ...mapState(['currentDatasetId']),
   },
   methods: {
-    ...mapMutations(["setDrawer"]),
+    ...mapMutations(['setDrawer']),
     datasetTabClick() {
       this.setDrawer(true);
-    }
-  }
+    },
+  },
 };
 </script>
 
 <template>
-  <v-tabs class="navigation-tabs ml-3" background-color="transparent">
+  <v-tabs
+    class="navigation-tabs ml-3"
+    background-color="transparent"
+  >
     <v-tab
       :to="`/${currentDatasetId ? currentDatasetId : ''}`"
       @click="datasetTabClick"
@@ -30,11 +33,18 @@ export default {
       <v-icon>view_column</v-icon>
       Experiments
     </v-tab>
-    <v-tab to="/settings" v-if="userLevel.value === 0">
+    <v-tab
+      v-if="userLevel.value === 0"
+      to="/settings"
+    >
       <v-icon>settings</v-icon>
       Settings
     </v-tab>
-    <v-tab v-if="userLevel.value === 0" :href="GIRDER_URL" target="_blank">
+    <v-tab
+      v-if="userLevel.value === 0"
+      :href="GIRDER_URL"
+      target="_blank"
+    >
       <v-icon>open_in_new</v-icon>
       Girder
     </v-tab>

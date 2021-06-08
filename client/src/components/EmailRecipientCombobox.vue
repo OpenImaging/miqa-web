@@ -1,44 +1,42 @@
 <script>
 export default {
-  name: "EmailRecipientCombobox",
+  name: 'EmailRecipientCombobox',
   props: {
     label: {
       type: String,
-      required: true
+      required: true,
     },
     value: {
-      reqyured: true,
-      type: Array
+      required: true,
+      type: Array,
     },
     candidates: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     required: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   methods: {
     isValid(recipient) {
       if (this.candidates.indexOf(recipient) !== -1) {
         return true;
-      } else {
-        return /.+@.+/.test(recipient);
       }
+      return /.+@.+/.test(recipient);
     },
     allValid(recipients) {
-      var invalid = recipients.find(recipient => !this.isValid(recipient));
-      return invalid ? "Receipient is not valid" : true;
-    }
-  }
+      const invalid = recipients.find((recipient) => !this.isValid(recipient));
+      return invalid ? 'Recipient is not valid' : true;
+    },
+  },
 };
 </script>
 
 <template>
   <v-combobox
     :value="value"
-    @input="$emit('input', $event)"
     :items="candidates"
     :label="label"
     multiple
@@ -50,6 +48,7 @@ export default {
         !!v.length || (required ? `at least one recipient is required` : true)
     ]"
     hide-selected
+    @input="$emit('input', $event)"
   >
     <template #selection="{ item, parent, selected }">
       <v-chip
@@ -60,8 +59,9 @@ export default {
         close
         @input="parent.selectItem(item)"
         @click:close="parent.selectItem(item)"
-        >{{ item }}</v-chip
       >
+        {{ item }}
+      </v-chip>
     </template>
   </v-combobox>
 </template>

@@ -1,39 +1,43 @@
 <script>
-import { mapMutations, mapActions } from "vuex";
-import { GirderAuthentication } from "@girder/components/src";
+import { mapMutations, mapActions } from 'vuex';
+import { GirderAuthentication } from '@girder/components/src';
 
 export default {
-  name: "Login",
+  name: 'Login',
   components: {
-    GirderAuthentication
+    GirderAuthentication,
   },
-  inject: ["girderRest"],
+  inject: ['girderRest'],
   data() {
     return {
-      form: "login",
-      userDialog: true
+      form: 'login',
+      userDialog: true,
     };
   },
-  methods: {
-    ...mapMutations(["setCurrentUser", "setSessionStatus"]),
-    ...mapActions(["startLoginMonitor"])
-  },
   watch: {
-    "girderRest.user"(user) {
+    'girderRest.user': (user) => {
       if (user) {
         this.setCurrentUser(user);
-        this.setSessionStatus("active");
-        this.$router.push("/");
+        this.setSessionStatus('active');
+        this.$router.push('/');
         this.startLoginMonitor();
       }
-    }
-  }
+    },
+  },
+  methods: {
+    ...mapMutations(['setCurrentUser', 'setSessionStatus']),
+    ...mapActions(['startLoginMonitor']),
+  },
 };
 </script>
 
 <template>
   <v-container>
-    <v-dialog :value="userDialog" persistent max-width="500px">
+    <v-dialog
+      :value="userDialog"
+      persistent
+      max-width="500px"
+    >
       <GirderAuthentication :register="true" />
     </v-dialog>
   </v-container>

@@ -1,22 +1,26 @@
 <script>
-import { mapState } from "vuex";
+import { mapState } from 'vuex';
 
-import VtkViewer from "./VtkViewer.vue";
+import VtkViewer from './VtkViewer.vue';
 
 export default {
-  name: "layout",
+  name: 'Layout',
   components: {
-    VtkViewer
+    VtkViewer,
   },
   computed: {
-    ...mapState(["vtkViews"])
-  }
+    ...mapState(['vtkViews']),
+  },
 };
 </script>
 
 <template>
   <div class="my-layout">
-    <div class="view" v-for="(vtkView, index) in vtkViews" :key="index">
+    <div
+      v-for="(vtkView, index) in vtkViews"
+      :key="index"
+      class="view"
+    >
       <VtkViewer :view="vtkView" />
     </div>
   </div>

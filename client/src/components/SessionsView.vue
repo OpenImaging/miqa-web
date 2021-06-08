@@ -1,86 +1,92 @@
 <script>
-import { mapState, mapGetters } from "vuex";
-import { API_URL } from "../constants";
+import { mapState, mapGetters } from 'vuex';
+import { API_URL } from '../constants';
 
 export default {
-  name: "sessions-view",
+  name: 'SessionsView',
   components: {},
   props: {
     minimal: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   data: () => ({
-    API_URL
+    API_URL,
   }),
   computed: {
     ...mapState([
-      "experiments",
-      "experimentIds",
-      "experimentSessions",
-      "loadingExperiment",
-      "sessions",
-      "sessionDatasets",
-      "datasets"
+      'experiments',
+      'experimentIds',
+      'experimentSessions',
+      'loadingExperiment',
+      'sessions',
+      'sessionDatasets',
+      'datasets',
     ]),
-    ...mapGetters(["currentSession", "currentExperiment"]),
+    ...mapGetters(['currentSession', 'currentExperiment']),
     orderedExperiments() {
       const allExperiments = this.experiments;
-      return this.experimentIds.map(expId => allExperiments[expId]);
+      return this.experimentIds.map((expId) => allExperiments[expId]);
     },
     loadingIcon() {
       return this.loadingExperiment
-        ? "mdi-progress-clock"
-        : "mdi-check-circle-outline";
+        ? 'mdi-progress-clock'
+        : 'mdi-check-circle-outline';
     },
     loadingIconColor() {
-      return this.loadingExperiment ? "red" : "green";
-    }
+      return this.loadingExperiment ? 'red' : 'green';
+    },
   },
   methods: {
     sessionsForExperiment(expId) {
       const expSessionIds = this.experimentSessions[expId];
       const allSessions = this.sessions;
-      return expSessionIds.map(sessionId => allSessions[sessionId]);
+      return expSessionIds.map((sessionId) => allSessions[sessionId]);
     },
     getIdOfFirstDatasetInSession(sessionId) {
       return `${this.sessionDatasets[sessionId][0]}`;
     },
     ratingToLabel(rating) {
       switch (rating) {
-        case "good":
-          return "G";
-        case "usableExtra":
-          return "E";
-        case "bad":
-          return "B";
+        case 'good':
+          return 'G';
+        case 'usableExtra':
+          return 'E';
+        case 'bad':
+          return 'B';
         case null:
-        case "":
-          return "";
+        case '':
+        default:
+          return '';
       }
-    }
-  }
+    },
+  },
 };
 </script>
 
 <template>
   <div class="sessions-view">
     <ul
-      class="experiment"
       v-if="orderedExperiments && orderedExperiments.length"
+      class="experiment"
     >
       <li
         v-for="experiment of orderedExperiments"
-        class="body-2"
         :key="`e.${experiment.id}`"
+        class="body-2"
       >
-        <v-card flat class="d-flex justify-space-between pr-2">
-          <v-card flat> {{ experiment.name }} </v-card>
+        <v-card
+          flat
+          class="d-flex justify-space-between pr-2"
+        >
+          <v-card flat>
+            {{ experiment.name }}
+          </v-card>
           <v-card flat>
             <v-icon
-              :color="loadingIconColor"
               v-show="experiment === currentExperiment"
+              :color="loadingIconColor"
             >
               {{ loadingIcon }}
             </v-icon>
@@ -89,8 +95,8 @@ export default {
         <ul class="sessions">
           <li
             v-for="session of sessionsForExperiment(experiment.id)"
-            class="body-1"
             :key="`s.${session.id}`"
+            class="body-1"
             :class="{
               current: session === currentSession
             }"
@@ -102,16 +108,23 @@ export default {
               small
               :to="getIdOfFirstDatasetInSession(session.id)"
               active-class=""
-              >{{ session.name
-              }}<span small v-if="session.meta && session.meta.rating"
-                >&nbsp;&nbsp;({{ ratingToLabel(session.meta.rating) }})</span
-              ></v-btn
             >
+              {{ session.name
+              }}<span
+                v-if="session.meta && session.meta.rating"
+                small
+              >&nbsp;&nbsp;({{ ratingToLabel(session.meta.rating) }})</span>
+            </v-btn>
           </li>
         </ul>
       </li>
     </ul>
-    <div v-else class="text-xs-center body-2">No imported sessions</div>
+    <div
+      v-else
+      class="text-xs-center body-2"
+    >
+      No imported sessions
+    </div>
   </div>
 </template>
 

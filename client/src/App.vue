@@ -1,36 +1,37 @@
 <script>
-import { mapActions, mapGetters } from "vuex";
+import { mapActions, mapGetters } from 'vuex';
+
 export default {
-  name: "App",
+  name: 'App',
   components: {},
-  inject: ["girderRest", "djangoRest"],
+  inject: ['girderRest', 'djangoRest'],
   provide() {
     return { userLevel: this.userLevel };
   },
   data: () => ({
-    userLevel: { value: null }
+    userLevel: { value: null },
   }),
   computed: {
-    ...mapGetters(["sessionStatus"])
+    ...mapGetters(['sessionStatus']),
   },
   watch: {
     sessionStatus(status) {
-      if (status === "timeout") {
+      if (status === 'timeout') {
         this.$prompt({
-          title: "Session Expired",
-          text: "Your session has expired and you will be logged out",
-          positiveButton: "Ok"
+          title: 'Session Expired',
+          text: 'Your session has expired and you will be logged out',
+          positiveButton: 'Ok',
         }).then(() => {
           this.logout();
         });
       }
-    }
+    },
   },
   created() {
     this.setUserLevel();
   },
   methods: {
-    ...mapActions(["logout"]),
+    ...mapActions(['logout']),
     async setUserLevel() {
       if (!this.girderRest.user) {
         return;
@@ -41,24 +42,24 @@ export default {
       if (this.girderRest.user.admin) {
         return 0;
       }
-      var roles = await Promise.all(
-        this.girderRest.user.groups.map(async id => {
-          var { data: group } = await this.girderRest.get(`group/${id}`);
+      const roles = await Promise.all(
+        this.girderRest.user.groups.map(async (id) => {
+          const { data: group } = await this.girderRest.get(`group/${id}`);
           return group.name.toLowerCase();
-        })
+        }),
       );
-      if (roles.indexOf("manager") !== -1) {
+      if (roles.indexOf('manager') !== -1) {
         return 1;
       }
-      if (roles.indexOf("reviewer") !== -1) {
+      if (roles.indexOf('reviewer') !== -1) {
         return 2;
       }
-      if (roles.indexOf("collaborator") !== -1) {
+      if (roles.indexOf('collaborator') !== -1) {
         return 3;
       }
       return null;
-    }
-  }
+    },
+  },
 };
 </script>
 

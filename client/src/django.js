@@ -1,29 +1,25 @@
-import axios from "axios";
-import Vue from "vue";
-import OAuthClient from "@girder/oauth-client";
-import { API_URL, OAUTH_API_ROOT, OAUTH_CLIENT_ID } from "./constants";
+import axios from 'axios';
+import Vue from 'vue';
+import OAuthClient from '@girder/oauth-client';
+import { API_URL, OAUTH_API_ROOT, OAUTH_CLIENT_ID } from './constants';
 
 const apiClient = axios.create({ baseURL: API_URL });
 const oauthClient = new OAuthClient(OAUTH_API_ROOT, OAUTH_CLIENT_ID);
 const djangoClient = new Vue({
-  data: () => {
-    return {
-      user: null,
-      apiClient
-    };
-  },
+  data: () => ({
+    user: null,
+    apiClient,
+  }),
   methods: {
     async restoreLogin() {
       await oauthClient.maybeRestoreLogin();
       if (oauthClient.isLoggedIn) {
         Object.assign(
           apiClient.defaults.headers.common,
-          oauthClient.authHeaders
+          oauthClient.authHeaders,
         );
 
         this.user = await this.me();
-      } else {
-        this.login();
       }
     },
     async login() {
@@ -34,25 +30,25 @@ const djangoClient = new Vue({
       this.user = null;
     },
     async sessions() {
-      const { data } = await apiClient.get("/sessions");
+      const { data } = await apiClient.get('/sessions');
       const { results } = data;
       return results;
     },
     async sites() {
-      const { data } = await apiClient.get("/sites");
+      const { data } = await apiClient.get('/sites');
       const { results } = data;
       return results;
     },
     async experiments(sessionId) {
-      const { data } = await apiClient.get("/experiments", {
-        params: { session: sessionId }
+      const { data } = await apiClient.get('/experiments', {
+        params: { session: sessionId },
       });
       const { results } = data;
       return results;
     },
     async scans(experimentId) {
-      const { data } = await apiClient.get("/scans", {
-        params: { experiment: experimentId }
+      const { data } = await apiClient.get('/scans', {
+        params: { experiment: experimentId },
       });
       const { results } = data;
       return results;
@@ -65,25 +61,25 @@ const djangoClient = new Vue({
       await apiClient.post(`/scans/${scanId}/decision`, { decision });
     },
     async addScanNote(scanId, note) {
-      await apiClient.post("/scan_notes", {
+      await apiClient.post('/scan_notes', {
         scan: scanId,
-        note
+        note,
       });
     },
     async setScanNote(scanNoteId, note) {
       await apiClient.put(`/scan_notes/${scanNoteId}`, { note });
     },
     async images(scanId) {
-      const { data } = await apiClient.get("/images", {
-        params: { scan: scanId }
+      const { data } = await apiClient.get('/images', {
+        params: { scan: scanId },
       });
       const { results } = data;
       return results;
     },
     async me() {
       return {};
-    }
-  }
+    },
+  },
 });
 
 export default djangoClient;
