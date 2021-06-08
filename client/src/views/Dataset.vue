@@ -94,7 +94,8 @@ export default {
   watch: {
     currentSession(session) {
       if (session) {
-        this.decision = session.decision;
+        const last = _.last(session.decisions);
+        this.decision = last ? last.decision : null;
         this.decisionChanged = false;
         this.newNote = '';
       }
@@ -166,7 +167,7 @@ export default {
       return Promise.resolve(true);
     },
     async save() {
-      if (this.newNote.trim()) {
+      if (this.newNote && this.newNote.trim()) {
         await this.djangoRest.addScanNote(this.currentSession.id, this.newNote);
         this.newNote = '';
       }
@@ -200,13 +201,16 @@ export default {
     },
     setNote(e) {
       this.newNote = e;
-      this.decisionChanged = true;
     },
     async onDecisionChanged() {
-      if (this.decision !== this.currentSession.decision) {
+      const last = _.last(this.currentSession.decisions);
+      const lastDecision = last ? last.decision : null;
+      if (this.decision && this.decision !== lastDecision) {
         this.decisionChanged = true;
         return;
       }
+      this.decisionChanged = false;
+
       if (this.firstDatasetInNextSession) {
         const { currentDatasetId } = this;
         this.$router
