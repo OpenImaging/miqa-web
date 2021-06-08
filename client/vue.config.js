@@ -8,6 +8,7 @@ module.exports = {
     port: 8081,
     public: process.env.PUBLIC_ADDRESS,
   },
+  lintOnSave: false,
   publicPath: process.env.VUE_APP_STATIC_PATH,
   configureWebpack: {
     module: {

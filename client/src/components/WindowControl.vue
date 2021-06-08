@@ -102,12 +102,14 @@ export default {
         repr.setWindowLevel(activeLevel);
       }, 0);
     },
-    'active.width': (value) => {
+    // eslint-disable-next-line func-names
+    'active.width': function (value) {
       if (value !== this.representation.getWindowWidth()) {
         this.representation.setWindowWidth(value);
       }
     },
-    'active.level': (value) => {
+    // eslint-disable-next-line func-names
+    'active.level': function (value) {
       if (value !== this.representation.getWindowLevel()) {
         this.representation.setWindowLevel(value);
       }

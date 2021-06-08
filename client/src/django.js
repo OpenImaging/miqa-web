@@ -20,8 +20,6 @@ const djangoClient = new Vue({
         );
 
         this.user = await this.me();
-      } else {
-        this.login();
       }
     },
     async login() {
