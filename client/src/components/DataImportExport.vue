@@ -4,7 +4,7 @@ import { mapActions } from 'vuex';
 export default {
   name: 'DataImportExport',
   components: {},
-  inject: ['girderRest'],
+  inject: ['djangoRest'],
   data: () => ({
     importEnabled: false,
     exportEnabled: false,
@@ -30,18 +30,18 @@ export default {
       this.importErrorText = '';
       this.importErrors = false;
       try {
-        const { data: result } = await this.girderRest.post('miqa/data/import');
+        // TODO: maybe call sessions() globally on app startup
+        const sessions = await this.djangoRest.sessions();
+        const session = sessions[0];
+
+        await this.djangoRest.import(session.id);
         this.importing = false;
-        if (result.errorMsg) {
-          this.importErrorText = `${result.success} scans succeeded, ${result.failed} failed.\n\n${result.errorMsg}`;
-          this.importErrors = true;
-        } else {
-          this.$snackbar({
-            text: `Import finished.
-            With ${result.success} scans succeeded and ${result.failed} failed.`,
-            timeout: 6000,
-          });
-        }
+
+        this.$snackbar({
+          text: 'Import finished.',
+          timeout: 6000,
+        });
+
         this.loadSessions();
       } catch (ex) {
         this.importing = false;
