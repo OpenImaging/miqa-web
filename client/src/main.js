@@ -27,7 +27,7 @@ Vue.use(Vuetify);
 Vue.use(AsyncComputed);
 Vue.use(Girder);
 Vue.use(vMousetrap);
-Vue.use(IdleVue, { store, idleTime: 10000 });
+Vue.use(IdleVue, { store, idleTime: 3600000 }); // 1 hour inactive timeout
 
 // Merge our own (currently empty) configuration with the one provided by
 // Girder web components (needed for the login dialog to render properly)
