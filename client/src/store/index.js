@@ -517,11 +517,12 @@ const store = new Vuex.Store({
       // Build navigation links throughout the dataset to improve performance.
       let firstInPrev = null;
 
-      const sessions = await djangoRest.sessions();
-      // Just use the first session for now
-      const session = sessions[0];
+      let [session] = await djangoRest.sessions();
+      session = await djangoRest.session(session.id);
 
-      const experiments = await djangoRest.experiments(session.id);
+      // place data in state
+      const { experiments } = session;
+
       for (let i = 0; i < experiments.length; i += 1) {
         const experiment = experiments[i];
         // set experimentSessions[experiment.id] before registering the experiment.id
@@ -537,7 +538,7 @@ const store = new Vuex.Store({
         // Web sessions == Django scans
         // TODO these requests *can* be run in parallel, or collapsed into one XHR
         // eslint-disable-next-line no-await-in-loop
-        const scans = await djangoRest.scans(experiment.id);
+        const { scans } = experiment;
         for (let j = 0; j < scans.length; j += 1) {
           const scan = scans[j];
           state.sessionDatasets[scan.id] = [];
@@ -546,7 +547,7 @@ const store = new Vuex.Store({
           // Web datasets == Django images
           // TODO these requests *can* be run in parallel, or collapsed into one XHR
           // eslint-disable-next-line no-await-in-loop
-          const images = await djangoRest.images(scan.id);
+          const { images } = scan;
 
           state.sessions[scan.id] = {
             id: scan.id,
@@ -565,6 +566,7 @@ const store = new Vuex.Store({
             const image = images[k];
             state.sessionDatasets[scan.id].push(image.id);
             state.datasets[image.id] = { ...image };
+            state.datasets[image.id].scan = scan.id;
             state.datasets[image.id].session = scan.id;
             state.datasets[image.id].experiment = experiment.id;
             state.datasets[image.id].index = k;
