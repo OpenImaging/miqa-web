@@ -517,100 +517,8 @@ const store = new Vuex.Store({
       // Build navigation links throughout the dataset to improve performance.
       let firstInPrev = null;
 
-      // method #1 (existing): fetch each resource in its own request
-      // best so far: 10462.620000000243 ms
-
-      // console.log("start benchmark");
-      // let t0 = performance.now();
-
-      // const sessions = await djangoRest.sessions();
-      
-      // let t1 = performance.now();
-
-      // // Just use the first session for now
-      // const session = sessions[0];
-
-      // const experiments = await djangoRest.experiments(session.id);
-
-      // let t2 = performance.now();
-
-      // for (let i = 0; i < experiments.length; i += 1) {
-      //   const experiment = experiments[i];
-      //   // set experimentSessions[experiment.id] before registering the experiment.id
-      //   // so SessionsView doesn't update prematurely
-      //   state.experimentSessions[experiment.id] = [];
-      //   state.experimentIds.push(experiment.id);
-      //   state.experiments[experiment.id] = {
-      //     id: experiment.id,
-      //     name: experiment.name,
-      //     index: i,
-      //   };
-
-      //   // Web sessions == Django scans
-      //   // TODO these requests *can* be run in parallel, or collapsed into one XHR
-      //   // eslint-disable-next-line no-await-in-loop
-      //   const scans = await djangoRest.scans(experiment.id);
-      //   for (let j = 0; j < scans.length; j += 1) {
-      //     const scan = scans[j];
-      //     state.sessionDatasets[scan.id] = [];
-      //     state.experimentSessions[experiment.id].push(scan.id);
-
-      //     // Web datasets == Django images
-      //     // TODO these requests *can* be run in parallel, or collapsed into one XHR
-      //     // eslint-disable-next-line no-await-in-loop
-      //     const images = await djangoRest.images(scan.id);
-
-      //     state.sessions[scan.id] = {
-      //       id: scan.id,
-      //       name: scan.scan_type,
-      //       experiment: experiment.id,
-      //       cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE],
-      //       numDatasets: images.length,
-      //       site: scan.site,
-      //       notes: scan.notes,
-      //       decision: scan.decision,
-      //       rating: decisionToRating(scan.decision),
-      //       // folderId: sessionId,
-      //       // meta: Object.assign({}, session.meta),
-      //     };
-
-      //     for (let k = 0; k < images.length; k += 1) {
-      //       const image = images[k];
-      //       state.sessionDatasets[scan.id].push(image.id);
-      //       state.datasets[image.id] = { ...image };
-      //       state.datasets[image.id].session = scan.id;
-      //       state.datasets[image.id].experiment = experiment.id;
-      //       state.datasets[image.id].index = k;
-      //       state.datasets[image.id].previousDataset = k > 0 ? images[k - 1].id : null;
-      //       state.datasets[image.id].nextDataset = k < images.length - 1 ? images[k + 1].id : null;
-      //       state.datasets[
-      //         image.id
-      //       ].firstDatasetInPreviousSession = firstInPrev;
-      //     }
-      //     if (images.length > 0) {
-      //       firstInPrev = images[0].id;
-      //     } else {
-      //       console.error(
-      //         `${experiment.name}/${scan.scan_type} has no datasets`,
-      //       );
-      //     }
-      //   }
-      // }
-
-      // let t3 = performance.now();
-      // console.log("end benchmark", t3-t0);
-
-
-      // method #2: fetch all resources in a single request
-
-      console.log("start benchmark");
-      let t0 = performance.now();
-      
-      let [session,] = await djangoRest.sessions();
+      let [session] = await djangoRest.sessions();
       session = await djangoRest.session(session.id);
-
-      let t1 = performance.now();
-      console.log("Finished data request", t1-t0);
 
       // place data in state
       const { experiments } = session;
@@ -630,7 +538,7 @@ const store = new Vuex.Store({
         // Web sessions == Django scans
         // TODO these requests *can* be run in parallel, or collapsed into one XHR
         // eslint-disable-next-line no-await-in-loop
-        const { scans } = experiment; 
+        const { scans } = experiment;
         for (let j = 0; j < scans.length; j += 1) {
           const scan = scans[j];
           state.sessionDatasets[scan.id] = [];
@@ -677,11 +585,6 @@ const store = new Vuex.Store({
           }
         }
       }
-
-      let t2 = performance.now();
-      console.log("Finished benchmark", t2-t1);
-
-
     },
     // This would be called reloadSession, but session is being renamed to scan
     async reloadScan({ commit, getters }) {
