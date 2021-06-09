@@ -1,30 +1,19 @@
 <script>
 export default {
   name: 'UserButton',
-  inject: ['girderRest'],
-  computed: {
-    initials() {
-      const first = this.girderRest.user.firstName;
-      const last = this.girderRest.user.lastName;
-      return (
-        first.charAt(0).toLocaleUpperCase() + last.charAt(0).toLocaleUpperCase()
-      );
-    },
-  },
+  inject: ['user'],
 };
 </script>
 
 <template>
   <v-btn
-    v-if="girderRest.user"
+    v-if="user"
     icon
-    color="grey lighten-1"
-    class="user-avatar-btn"
-    @click="$emit('user', girderRest.user)"
+    color="black lighten-1"
+    class="mr-4"
+    @click="$emit('user')"
   >
-    <v-avatar>
-      {{ initials }}
-    </v-avatar>
+    Logout
   </v-btn>
   <v-btn
     v-else
