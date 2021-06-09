@@ -7,33 +7,33 @@ export default {
   data: () => ({
     show: false,
     minutes: initMinutes,
-    seconds: initSeconds
+    seconds: initSeconds,
   }),
-  inject: ["djangoRest"],
+  inject: ['djangoRest'],
   computed: {
-    minutesStr(){
+    minutesStr() {
       switch (this.minutes) {
         case 0:
-          return "";
+          return '';
         case 1:
-          return "1 minute";
+          return '1 minute';
         default:
-          return this.minutes + " minutes";
+          return `${this.minutes} minutes`;
       }
     },
-    secondsStr(){
+    secondsStr() {
       switch (this.seconds) {
         case 0:
-          return "";
+          return '';
         case 1:
-          return "1 second";
+          return '1 second';
         default:
-          return this.seconds + " seconds";
+          return `${this.seconds} seconds`;
       }
     },
-    done(){
+    done() {
       return this.minutes <= 0 && this.seconds <= 0;
-    }
+    },
   },
   watch: {
     isAppIdle(idle) {
@@ -41,80 +41,101 @@ export default {
         this.show = true;
         this.decrement();
       }
-    }
+    },
   },
   methods: {
-    reset(){
+    reset() {
       this.minutes = initMinutes;
       this.seconds = initSeconds;
       this.show = false;
     },
-    logout(){
+    logout() {
       this.minutes = 0;
       this.seconds = 0;
     },
-    reload(){
+    reload() {
       this.$router.go();
     },
-    decrement(){
-      if(this.show){
-          setTimeout(() => {
-            this.seconds--;
+    decrement() {
+      if (this.show) {
+        setTimeout(() => {
+          this.seconds -= 1;
 
-            if(this.minutes <= 0 && this.seconds <= 0){
-              this.djangoRest.logout();
-              return;
-            }
+          if (this.minutes <= 0 && this.seconds <= 0) {
+            this.djangoRest.logout();
+            return;
+          }
 
-            if(this.seconds == 0){
-              this.minutes--;
-              this.seconds = initSeconds;
-            }
+          if (this.seconds === 0) {
+            this.minutes -= 1;
+            this.seconds = initSeconds;
+          }
 
-            this.decrement();
-
+          this.decrement();
         }, 1000);
       }
-
-    }
-  }
+    },
+  },
 };
 </script>
 
 <template>
-  <v-dialog v-model="this.show" width="500" persistent>
+  <v-dialog
+    v-model="show"
+    width="500"
+    persistent
+  >
     <v-card>
       <v-card-title class="text-h5 grey lighten-2">
         Warning
       </v-card-title>
 
       <v-card-text class="timeout-text">
-        <p v-if="this.done">
-          You have been logged out due to inactivity. Refresh the page to log back in
+        <p v-if="done">
+          You have been logged out due to inactivity. Refresh the page to log
+          back in
         </p>
         <p v-else>
           You have been inactive for more than 1 hour. Your session will
           automatically terminate in {{ minutesStr }} {{ secondsStr }}
         </p>
-
       </v-card-text>
 
       <v-divider />
 
       <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn v-if="!this.done" color="primary"  text @click="this.reset">Continue Session</v-btn>
-        <v-btn v-if="!this.done" color="secondary" text @click="this.logout"> Logout </v-btn>
-        <v-btn v-if="this.done" color="primary" text @click="this.reload"> Reload </v-btn>
+        <v-spacer />
+        <v-btn
+          v-if="!done"
+          color="primary"
+          text
+          @click="reset"
+        >
+          Continue Session
+        </v-btn>
+        <v-btn
+          v-if="!done"
+          color="secondary"
+          text
+          @click="logout"
+        >
+          Logout
+        </v-btn>
+        <v-btn
+          v-if="done"
+          color="primary"
+          text
+          @click="reload"
+        >
+          Reload
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
-
 <style scoped>
-.timeout-text{
+.timeout-text {
   padding: 15px 25px !important;
 }
-
 </style>
