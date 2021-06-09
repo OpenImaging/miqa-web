@@ -9,7 +9,7 @@ export default {
   components: {
     EmailRecipientCombobox,
   },
-  inject: ['girderRest'],
+  inject: ['djangoRest'],
   props: {
     value: {
       type: Boolean,
@@ -151,7 +151,7 @@ Notes:
         return candidate ? candidate.email : recipient;
       });
       this.sending = true;
-      await this.girderRest.post('miqa_email', {
+      await this.djangoRest.sendEmail({
         to: toAddresses,
         cc: ccAddresses,
         bcc: bccAddresses,
