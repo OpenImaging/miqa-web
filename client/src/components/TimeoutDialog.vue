@@ -90,7 +90,7 @@ export default {
         Warning
       </v-card-title>
 
-      <v-card-text class="timeout-text">
+      <v-card-text class="py-4 px-6">
         <p v-if="done">
           You have been logged out due to inactivity. Refresh the page to log
           back in
@@ -133,9 +133,3 @@ export default {
     </v-card>
   </v-dialog>
 </template>
-
-<style scoped>
-.timeout-text {
-  padding: 15px 25px !important;
-}
-</style>
