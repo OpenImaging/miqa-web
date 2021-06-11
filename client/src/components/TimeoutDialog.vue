@@ -1,5 +1,9 @@
 <script>
-const initMinutes = 4;
+import {
+  mapState, mapActions, mapMutations,
+} from 'vuex';
+
+const initMinutes = 1;
 const initSeconds = 59;
 
 export default {
@@ -11,6 +15,7 @@ export default {
   }),
   inject: ['djangoRest'],
   computed: {
+    ...mapState(['actionTimeout']),
     minutesStr() {
       switch (this.minutes) {
         case 0:
@@ -42,12 +47,28 @@ export default {
         this.decrement();
       }
     },
+    actionTimeout(timeout) {
+      if (timeout && !this.show) {
+        this.show = true;
+        this.decrement();
+      }
+    },
+  },
+  created() {
+    this.startActionTimer();
   },
   methods: {
+    ...mapActions(['startActionTimer', 'resetActionTimer']),
+    ...mapMutations(['setActionTimeout']),
     reset() {
+      // reset dialog
+      this.show = false;
       this.minutes = initMinutes;
       this.seconds = initSeconds;
-      this.show = false;
+
+      // reset no-action timer
+      this.setActionTimeout(false);
+      this.resetActionTimer();
     },
     logout() {
       this.minutes = 0;
