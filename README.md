@@ -1,7 +1,7 @@
 # MIQA
 MIQA is a medical scan QA/QC application. It takes .nifti files and a CSV file as input, and outputs the same CSV file with additional QA/QC results.
 
-The server is built on [Girder](https://github.com/girder/girder), a python based data management solution, and the client application is built with [Vue.js](https://vuejs.org/), Vuetify, and Vue CLI. The medical scan visualization is powered by [VTK.js](https://kitware.github.io/vtk-js/index.html)
+The server is built on [Django](https://www.djangoproject.com/), a Python web framework, and the client application is built with [Vue.js](https://vuejs.org/), Vuetify, and Vue CLI. The medical scan visualization is powered by [VTK.js](https://kitware.github.io/vtk-js/index.html)
 
 ## A screen record
 ![](https://user-images.githubusercontent.com/3123478/63644049-df545a80-c6ad-11e9-8a32-22b18c3add25.gif)
