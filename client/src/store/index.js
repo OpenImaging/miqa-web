@@ -518,7 +518,11 @@ const store = new Vuex.Store({
       let firstInPrev = null;
 
       let [session] = await djangoRest.sessions();
-      session = await djangoRest.session(session.id);
+      if (session) { // no sessions
+        session = await djangoRest.session(session.id);
+      } else {
+        return;
+      }
 
       // place data in state
       const { experiments } = session;
