@@ -518,9 +518,11 @@ const store = new Vuex.Store({
       let firstInPrev = null;
 
       let [session] = await djangoRest.sessions();
-      if (session) { // no sessions
+      if (session) {
+        // load first available session
         session = await djangoRest.session(session.id);
       } else {
+        // no sessions: can't load any
         return;
       }
 
