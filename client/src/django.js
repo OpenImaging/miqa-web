@@ -15,10 +15,6 @@ const djangoClient = new Vue({
     setStore(store) {
       this.store = store;
     },
-    async resetActionTimer() {
-      await oauthClient.maybeRestoreLogin();
-      this.store.dispatch('resetActionTimer');
-    },
     async restoreLogin() {
       await oauthClient.maybeRestoreLogin();
       if (oauthClient.isLoggedIn) {
@@ -29,6 +25,14 @@ const djangoClient = new Vue({
 
         this.user = await this.me();
       }
+
+      // mark user not-idle
+      apiClient.interceptors.request.use(async (config) => {
+        await oauthClient.maybeRestoreLogin();
+        this.store.dispatch('resetActionTimer');
+
+        return config;
+      }, (error) => Promise.reject(error));
     },
     async login() {
       await oauthClient.redirectToLogin();
@@ -38,23 +42,19 @@ const djangoClient = new Vue({
       this.user = null;
     },
     async import(sessionId) {
-      await this.resetActionTimer();
       await apiClient.post(`/sessions/${sessionId}/import`);
     },
     async sessions() {
-      await this.resetActionTimer();
       const { data } = await apiClient.get('/sessions');
       const { results } = data;
       return results;
     },
     async sites() {
-      await this.resetActionTimer();
       const { data } = await apiClient.get('/sites');
       const { results } = data;
       return results;
     },
     async experiments(sessionId) {
-      await this.resetActionTimer();
       const { data } = await apiClient.get('/experiments', {
         params: { session: sessionId },
       });
@@ -62,7 +62,6 @@ const djangoClient = new Vue({
       return results;
     },
     async scans(experimentId) {
-      await this.resetActionTimer();
       const { data } = await apiClient.get('/scans', {
         params: { experiment: experimentId },
       });
@@ -70,27 +69,22 @@ const djangoClient = new Vue({
       return results;
     },
     async scan(scanId) {
-      await this.resetActionTimer();
       const { data } = await apiClient.get(`/scans/${scanId}`);
       return data;
     },
     async setDecision(scanId, decision) {
-      await this.resetActionTimer();
       await apiClient.post(`/scans/${scanId}/decision`, { decision });
     },
     async addScanNote(scanId, note) {
-      await this.resetActionTimer();
       await apiClient.post('/scan_notes', {
         scan: scanId,
         note,
       });
     },
     async setScanNote(scanNoteId, note) {
-      await this.resetActionTimer();
       await apiClient.put(`/scan_notes/${scanNoteId}`, { note });
     },
     async images(scanId) {
-      await this.resetActionTimer();
       const { data } = await apiClient.get('/images', {
         params: { scan: scanId },
       });

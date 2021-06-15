@@ -325,7 +325,10 @@ export default {
           <v-icon>email</v-icon>
         </v-badge>
       </v-btn>
-      <UserButton @user="logoutUser()" />
+      <UserButton
+        @user="logoutUser()"
+        @login="djangoRest.login()"
+      />
     </v-app-bar>
     <v-navigation-drawer
       app

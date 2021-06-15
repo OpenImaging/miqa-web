@@ -41,6 +41,7 @@ export default {
     },
   },
   watch: {
+    // vue-idle: Adds a computed value 'isAppIdle' to all Vue objects
     isAppIdle(idle) {
       if (idle && !this.show) {
         this.show = true;

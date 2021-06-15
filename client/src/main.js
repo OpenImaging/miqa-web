@@ -51,9 +51,9 @@ if (process.env.NODE_ENV === 'production') {
   console.log = () => { };
 }
 
+djangoRest.setStore(store);
 djangoRest.restoreLogin().then(async () => {
   const user = await djangoRest.me();
-  djangoRest.setStore(store);
 
   new Vue({
     vuetify,
