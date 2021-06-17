@@ -30,6 +30,8 @@ let taskRunId = -1;
 let savedWorker = null;
 let sessionTimeoutId = null;
 
+const actiontime = 1800000; // 30 minute no action timeout
+
 function shrinkProxyManager(proxyManager) {
   proxyManager.getViews().forEach((view) => {
     view.setContainer(null);
@@ -182,6 +184,8 @@ const store = new Vuex.Store({
     sessionStatus: null,
     remainingSessionTime: 0,
     workerPool: new WorkerPool(poolSize, poolFunction),
+    actionTimer: null,
+    actionTimeout: false,
   },
   getters: {
     sessionStatus(state) {
@@ -332,6 +336,9 @@ const store = new Vuex.Store({
     },
     setRemainingSessionTime(state, timeRemaining) {
       state.remainingSessionTime = timeRemaining;
+    },
+    setActionTimeout(state, value) {
+      state.actionTimeout = value;
     },
   },
   actions: {
@@ -716,6 +723,15 @@ const store = new Vuex.Store({
       const sites = await djangoRest.sites();
       // let { data: sites } = await girder.rest.get("miqa_setting/site");
       state.sites = sites;
+    },
+    startActionTimer({ state, commit }) {
+      state.actionTimer = setTimeout(() => {
+        commit('setActionTimeout', true);
+      }, actiontime);
+    },
+    resetActionTimer({ state, dispatch }) {
+      clearTimeout(state.actionTimer);
+      dispatch('startActionTimer');
     },
   },
 });

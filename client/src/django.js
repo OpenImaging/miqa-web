@@ -8,9 +8,13 @@ const oauthClient = new OAuthClient(OAUTH_API_ROOT, OAUTH_CLIENT_ID);
 const djangoClient = new Vue({
   data: () => ({
     user: null,
+    store: null,
     apiClient,
   }),
   methods: {
+    setStore(store) {
+      this.store = store;
+    },
     async restoreLogin() {
       await oauthClient.maybeRestoreLogin();
       if (oauthClient.isLoggedIn) {
@@ -21,6 +25,14 @@ const djangoClient = new Vue({
 
         this.user = await this.me();
       }
+
+      // mark user not-idle
+      apiClient.interceptors.request.use(async (config) => {
+        await oauthClient.maybeRestoreLogin();
+        this.store.dispatch('resetActionTimer');
+
+        return config;
+      }, (error) => Promise.reject(error));
     },
     async login() {
       await oauthClient.redirectToLogin();

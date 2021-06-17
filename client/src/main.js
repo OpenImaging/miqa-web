@@ -4,19 +4,19 @@ import Vuetify from 'vuetify';
 import AsyncComputed from 'vue-async-computed';
 import Girder, { vuetifyConfig } from '@girder/components/src';
 import config from 'itk/itkConfig';
+import IdleVue from 'idle-vue';
 import App from './App.vue';
 import router from './router';
 import store from './store';
 import { STATIC_PATH } from './constants';
 
+import 'vuetify/dist/vuetify.min.css';
+
+import './vtk/ColorMaps';
 import vMousetrap from './vue-utilities/v-mousetrap';
 import snackbarService from './vue-utilities/snackbar-service';
 import promptService from './vue-utilities/prompt-service';
 import girder from './girder';
-
-import 'vuetify/dist/vuetify.min.css';
-
-import './vtk/ColorMaps';
 
 import djangoRest from './django';
 
@@ -27,9 +27,10 @@ Vue.use(Vuetify);
 Vue.use(AsyncComputed);
 Vue.use(Girder);
 Vue.use(vMousetrap);
+Vue.use(IdleVue, { store, idleTime: 900000 }); // 15 minutes inactive timeout
 
 // Merge our own (currently empty) configuration with the one provided by
-// Girder web components (needed for the login dialog to render properly).
+// Girder web components (needed for the login dialog to render properly)
 const vuetifyOptions = { ...vuetifyConfig };
 const vuetify = new Vuetify(vuetifyOptions);
 
@@ -50,6 +51,7 @@ if (process.env.NODE_ENV === 'production') {
   console.log = () => { };
 }
 
+djangoRest.setStore(store);
 djangoRest.restoreLogin().then(async () => {
   const user = await djangoRest.me();
 
