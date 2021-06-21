@@ -159,38 +159,25 @@ function poolFunction(webWorker, taskInfo) {
   });
 }
 
-// iterate experiments to find non-empty next scan
+// get next scan (across experiments)
 function getNextDataset(experiments, i, j) {
   const experiment = experiments[i];
   const { scans } = experiment;
 
   if (j === scans.length - 1) {
     // last scan, go to next experiment
-
     if (i === experiments.length - 1) {
       // last experiment, nowhere to go
       return null;
     }
-
+    // get first scan in next experiment
     const nextExperiment = experiments[i + 1];
-    if (nextExperiment.scans.length > 0) {
-      const nextScan = nextExperiment.scans[0];
-      if (nextScan.images.length > 0) {
-        return nextScan.images[0].id;
-      }
-      // no images in scan, try next one
-      return getNextDataset(experiments, i + 1, j + 1);
-    }
-    // no scans in experiment, try next one
-    return getNextDataset(experiments, i + 1, -1);
+    const nextScan = nextExperiment.scans[0];
+    return nextScan.images[0];
   }
-  // go to next scan in experiment
+  // get next scan in current experiment
   const nextScan = scans[j + 1];
-  if (nextScan.images.length > 0) {
-    return nextScan.images[0].id;
-  }
-  // no images in scan, try next one
-  return getNextDataset(experiments, i, j + 1);
+  return nextScan.images[0];
 }
 
 const store = new Vuex.Store({
@@ -514,7 +501,7 @@ const store = new Vuex.Store({
             // meta: Object.assign({}, session.meta),
           };
 
-          const nextDataset = getNextDataset(experiments, i, j);
+          const nextScan = getNextDataset(experiments, i, j);
 
           for (let k = 0; k < images.length; k += 1) {
             const image = images[k];
@@ -527,7 +514,7 @@ const store = new Vuex.Store({
             state.datasets[image.id].previousDataset = k > 0 ? images[k - 1].id : null;
             state.datasets[image.id].nextDataset = k < images.length - 1 ? images[k + 1].id : null;
             state.datasets[image.id].firstDatasetInPreviousSession = firstInPrev;
-            state.datasets[image.id].firstDatasetInNextSession = nextDataset;
+            state.datasets[image.id].firstDatasetInNextSession = nextScan ? nextScan.id : null;
           }
           if (images.length > 0) {
             firstInPrev = images[0].id;
