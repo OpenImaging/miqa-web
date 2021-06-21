@@ -528,9 +528,6 @@ const store = new Vuex.Store({
             state.datasets[image.id].nextDataset = k < images.length - 1 ? images[k + 1].id : null;
             state.datasets[image.id].firstDatasetInPreviousSession = firstInPrev;
             state.datasets[image.id].firstDatasetInNextSession = nextDataset;
-            if (firstInPrev == null) {
-              console.log(scan.scan_type);
-            }
           }
           if (images.length > 0) {
             firstInPrev = images[0].id;
