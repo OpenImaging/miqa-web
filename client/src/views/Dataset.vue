@@ -215,10 +215,10 @@ export default {
       if (this.decision && this.decision !== lastDecision) {
         this.decisionChanged = true;
         await this.save();
-        console.log(this.firstDatasetInNextSession)
+
         if (this.firstDatasetInNextSession) {
           const { currentDatasetId } = this;
-          
+
           this.$router
             .push(this.firstDatasetInNextSession)
             .catch(this.handleNavigationError);
@@ -236,7 +236,6 @@ export default {
           });
         }
       }
-      
     },
     focusNote(el, e) {
       this.$refs.note.focus();
@@ -699,7 +698,7 @@ export default {
                         small
                         value="BAD"
                         color="red"
-                        :disabled="!newNote && !notes"
+                        :disabled="!newNote && notes.length === 0"
                       >
                         Bad
                       </v-btn>
