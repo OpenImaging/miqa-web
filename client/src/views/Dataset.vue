@@ -543,11 +543,18 @@ export default {
                           cols="9"
                           class="pb-1 pt-0 justifyRight"
                         >
-                          {{
-                            getExperimentDisplayName(
-                              currentSession.experiment
-                            )
-                          }}
+                          <a
+                            :href="'/xnat/app/action/DisplayItemAction/search_value' +
+                              `/${currentSession.experiment}/search_element/xnat:mrSessionData` +
+                              '/search_field/xnat:mrSessionData.ID'"
+                            target="_blank"
+                          >
+                            {{
+                              getExperimentDisplayName(
+                                currentSession.experiment
+                              )
+                            }}
+                          </a>
                         </v-col>
                       </v-row>
                       <v-row>
