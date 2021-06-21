@@ -60,24 +60,22 @@ export default {
         case 'good':
           return {
             decision: 'G',
-            color: 'green',
+            css: 'green--text',
           };
         case 'usable_extra':
           return {
             decision: 'E',
-            color: 'blue',
+            css: 'blue--text',
           };
         case 'bad':
           return {
             decision: 'B',
-            color: 'red',
+            css: 'red--text',
           };
-        case null:
-        case '':
-        default:
+        default: // caught be malformed decisions
           return {
             decision: '?',
-            color: 'black',
+            css: 'black--text',
           };
       }
     },
@@ -132,7 +130,7 @@ export default {
               {{ session.name }}
               <span
                 v-if="session.decisions.length !== 0"
-                :class="`${session.color}--text`"
+                :class="session.css"
                 small
               >&nbsp;&nbsp;({{ session.decision }})</span>
             </v-btn>
