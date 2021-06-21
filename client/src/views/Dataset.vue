@@ -97,7 +97,7 @@ export default {
   watch: {
     currentSession(session) {
       if (session) {
-        const last = _.last(session.decisions);
+        const last = _.head(session.decisions);
         this.decision = last ? last.decision : null;
         this.decisionChanged = false;
         this.newNote = '';
@@ -210,31 +210,33 @@ export default {
       this.newNote = e;
     },
     async onDecisionChanged() {
-      const last = _.last(this.currentSession.decisions);
+      const last = _.head(this.currentSession.decisions);
       const lastDecision = last ? last.decision : null;
       if (this.decision && this.decision !== lastDecision) {
         this.decisionChanged = true;
-        return;
-      }
-      this.decisionChanged = false;
+        await this.save();
+        console.log(this.firstDatasetInNextSession)
+        if (this.firstDatasetInNextSession) {
+          const { currentDatasetId } = this;
+          
+          this.$router
+            .push(this.firstDatasetInNextSession)
+            .catch(this.handleNavigationError);
 
-      if (this.firstDatasetInNextSession) {
-        const { currentDatasetId } = this;
-        this.$router
-          .push(this.firstDatasetInNextSession)
-          .catch(this.handleNavigationError);
-        this.$snackbar({
-          text: 'Proceeded to next session',
-          button: 'Go back',
-          timeout: 6000,
-          immediate: true,
-          callback: () => {
-            this.$router
-              .push(currentDatasetId)
-              .catch(this.handleNavigationError);
-          },
-        });
+          this.$snackbar({
+            text: 'Proceeded to next session',
+            button: 'Go back',
+            timeout: 6000,
+            immediate: true,
+            callback: () => {
+              this.$router
+                .push(currentDatasetId)
+                .catch(this.handleNavigationError);
+            },
+          });
+        }
       }
+      
     },
     focusNote(el, e) {
       this.$refs.note.focus();
