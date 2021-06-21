@@ -1,4 +1,5 @@
 <script>
+import _ from 'lodash';
 import { mapState, mapGetters } from 'vuex';
 import { API_URL } from '../constants';
 
@@ -41,24 +42,43 @@ export default {
   methods: {
     sessionsForExperiment(expId) {
       const expSessionIds = this.experimentSessions[expId];
-      const allSessions = this.sessions;
-      return expSessionIds.map((sessionId) => allSessions[sessionId]);
+      return expSessionIds.map((sessionId) => {
+        const scan = this.sessions[sessionId];
+        return {
+          ...scan,
+          ...this.decisionToRating(scan.decisions),
+        };
+      });
     },
     getIdOfFirstDatasetInSession(sessionId) {
       return `${this.sessionDatasets[sessionId][0]}`;
     },
-    ratingToLabel(rating) {
+    decisionToRating(decisions) {
+      if (decisions.length === 0) return {};
+      const rating = _.last(decisions).decision.toLowerCase();
       switch (rating) {
         case 'good':
-          return 'G';
-        case 'usableExtra':
-          return 'E';
+          return {
+            decision: 'G',
+            color: 'green',
+          };
+        case 'usable_extra':
+          return {
+            decision: 'E',
+            color: 'blue',
+          };
         case 'bad':
-          return 'B';
+          return {
+            decision: 'B',
+            color: 'red',
+          };
         case null:
         case '':
         default:
-          return '';
+          return {
+            decision: '?',
+            color: 'black',
+          };
       }
     },
   },
@@ -92,7 +112,7 @@ export default {
             </v-icon>
           </v-card>
         </v-card>
-        <ul class="sessions">
+        <ul class="scans">
           <li
             v-for="session of sessionsForExperiment(experiment.id)"
             :key="`s.${session.id}`"
@@ -102,18 +122,19 @@ export default {
             }"
           >
             <v-btn
-              class="ml-0 px-1 session-name"
+              class="ml-0 px-1 scan-name"
               href
               text
               small
               :to="getIdOfFirstDatasetInSession(session.id)"
               active-class=""
             >
-              {{ session.name
-              }}<span
-                v-if="session.meta && session.meta.rating"
+              {{ session.name }}
+              <span
+                v-if="session.decisions.length !== 0"
+                :class="`${session.color}--text`"
                 small
-              >&nbsp;&nbsp;({{ ratingToLabel(session.meta.rating) }})</span>
+              >&nbsp;&nbsp;({{ session.decision }})</span>
             </v-btn>
           </li>
         </ul>
@@ -141,13 +162,13 @@ ul.experiment {
   list-style: none;
 }
 
-ul.sessions {
+ul.scans {
   padding-left: 15px;
 }
 </style>
 
 <style lang="scss">
-.sessions-view .session-name .v-btn__content {
+.sessions-view .scan-name .v-btn__content {
   text-transform: none;
 }
 </style>
