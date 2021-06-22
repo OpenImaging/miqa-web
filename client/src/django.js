@@ -97,7 +97,7 @@ const djangoClient = new Vue({
     },
     async me() {
       const resp = await apiClient.get('/users/me');
-      return resp.status === 204 ? null : resp.data;
+      return resp.status === 200 ? resp.data : null;
     },
     async sendEmail(email) {
       await apiClient.post('/email', email);

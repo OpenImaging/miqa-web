@@ -68,10 +68,7 @@ djangoRest.restoreLogin().then(async () => {
 
   if (user) {
     store.commit('setCurrentUser', user);
-    store.commit('setSessionStatus', 'active');
   } else {
-    store.commit('setSessionStatus', 'init');
+    djangoRest.login();
   }
-
-  store.dispatch('startLoginMonitor');
 });

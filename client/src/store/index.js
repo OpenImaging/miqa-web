@@ -202,16 +202,12 @@ const store = new Vuex.Store({
     sessionCachedPercentage: 0,
     responseInterceptor: null,
     userCheckPeriod: 60000, // In milliseconds
-    sessionStatus: null,
     remainingSessionTime: 0,
     workerPool: new WorkerPool(poolSize, poolFunction),
     actionTimer: null,
     actionTimeout: false,
   },
   getters: {
-    sessionStatus(state) {
-      return state.sessionStatus;
-    },
     currentUser(state) {
       return state.currentUser;
     },
@@ -334,9 +330,6 @@ const store = new Vuex.Store({
       state.sessions = { ...state.sessions };
       state.sessions[scanId] = scan;
     },
-    setSessionStatus(state, status) {
-      state.sessionStatus = status;
-    },
     setCurrentUser(state, user) {
       state.currentUser = user;
     },
@@ -398,46 +391,18 @@ const store = new Vuex.Store({
       state.screenshots = [];
       state.sites = null;
       state.sessionCachedPercentage = 0;
-      state.sessionStatus = null;
       state.remainingSessionTime = 0;
 
       fileCache.clear();
       datasetCache.clear();
     },
-    async logout({ commit, dispatch }) {
+    async logout({ dispatch }) {
       dispatch('reset');
       await djangoRest.logout();
-      commit('setSessionStatus', 'logout');
     },
     async requestCurrentUser({ commit }) {
       const remainingTime = await girder.rest.get('miqa/sessiontime');
       commit('setRemainingSessionTime', remainingTime.data);
-    },
-    startLoginMonitor() {
-      // startLoginMonitor({ state, commit, dispatch }) {
-      // TODO figure this out
-      // if (state.responseInterceptor === null) {
-      //   state.responseInterceptor = girder.rest.interceptors.response.use(
-      //     response => response,
-      //     error => {
-      //       if (state.currentUser !== null && error.response.status === 401) {
-      //         commit("setSessionStatus", "timeout");
-      //       } else {
-      //         return Promise.reject(error);
-      //       }
-      //     }
-      //   );
-      //
-      //   const checkUser = () => {
-      //     dispatch("requestCurrentUser");
-      //     sessionTimeoutId = window.setTimeout(
-      //       checkUser,
-      //       state.userCheckPeriod
-      //     );
-      //   };
-      //
-      //   checkUser();
-      // }
     },
     async loadSessions({ state }) {
       state.experimentIds = [];
