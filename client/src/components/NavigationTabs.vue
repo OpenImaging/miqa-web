@@ -39,14 +39,6 @@ export default {
       <v-icon>settings</v-icon>
       Settings
     </v-tab>
-    <v-tab
-      v-if="currentUser.is_superuser"
-      :href="GIRDER_URL"
-      target="_blank"
-    >
-      <v-icon>open_in_new</v-icon>
-      Girder
-    </v-tab>
   </v-tabs>
 </template>
 
