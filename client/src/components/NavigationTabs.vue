@@ -5,12 +5,11 @@ import { GIRDER_URL } from '../constants';
 
 export default {
   name: 'NavigationTabs',
-  inject: ['girderRest'],
   data: () => ({
     GIRDER_URL,
   }),
   computed: {
-    ...mapState(['currentDatasetId']),
+    ...mapState(['currentDatasetId', 'currentUser']),
   },
   methods: {
     ...mapMutations(['setDrawer']),
@@ -34,12 +33,14 @@ export default {
       Experiments
     </v-tab>
     <v-tab
+      v-if="currentUser.is_superuser"
       to="/settings"
     >
       <v-icon>settings</v-icon>
       Settings
     </v-tab>
     <v-tab
+      v-if="currentUser.is_superuser"
       :href="GIRDER_URL"
       target="_blank"
     >
