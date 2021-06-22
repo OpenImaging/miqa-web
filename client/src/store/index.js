@@ -159,6 +159,27 @@ function poolFunction(webWorker, taskInfo) {
   });
 }
 
+// get next scan (across experiments)
+function getNextDataset(experiments, i, j) {
+  const experiment = experiments[i];
+  const { scans } = experiment;
+
+  if (j === scans.length - 1) {
+    // last scan, go to next experiment
+    if (i === experiments.length - 1) {
+      // last experiment, nowhere to go
+      return null;
+    }
+    // get first scan in next experiment
+    const nextExperiment = experiments[i + 1];
+    const nextScan = nextExperiment.scans[0];
+    return nextScan.images[0];
+  }
+  // get next scan in current experiment
+  const nextScan = scans[j + 1];
+  return nextScan.images[0];
+}
+
 const store = new Vuex.Store({
   state: {
     currentUser: null,
@@ -245,7 +266,7 @@ const store = new Vuex.Store({
     getTodoById: (state) => (id) => state.todos.find((todo) => todo.id === id),
     firstDatasetInPreviousSession(state, getters) {
       return getters.currentDataset
-        ? `${getters.currentDataset.firstDatasetInPreviousSession}`
+        ? getters.currentDataset.firstDatasetInPreviousSession
         : null;
     },
     firstDatasetInNextSession(state, getters) {
@@ -419,101 +440,6 @@ const store = new Vuex.Store({
       // }
     },
     async loadSessions({ state }) {
-      // let { data: sessionTree } = await girder.rest.get(`miqa/sessions`);
-      //
-      // state.experimentIds = [];
-      // state.experiments = {};
-      // state.experimentSessions = {};
-      // state.sessions = {};
-      // state.sessionDatasets = {};
-      // state.datasets = {};
-      //
-      // // Build navigation links throughout the dataset to improve performance.
-      // let firstInPrev = null;
-      //
-      // for (let i = 0; i < sessionTree.length; i++) {
-      //   let experiment = sessionTree[i];
-      //   let experimentId = experiment.folderId;
-      //
-      //   state.experimentIds.push(experimentId);
-      //   state.experiments[experimentId] = {
-      //     id: experimentId,
-      //     folderId: experimentId,
-      //     name: experiment.name,
-      //     index: i
-      //   };
-      //
-      //   let sessions = experiment.sessions.sort(
-      //     (a, b) => a.meta.scanId - b.meta.scanId
-      //   );
-      //
-      //   state.experimentSessions[experimentId] = [];
-      //
-      //   for (let j = 0; j < sessions.length; j++) {
-      //     let session = sessions[j];
-      //     let sessionId = session.folderId;
-      //
-      //     state.experimentSessions[experimentId].push(sessionId);
-      //     state.sessions[sessionId] = {
-      //       id: sessionId,
-      //       folderId: sessionId,
-      //       name: session.name,
-      //       meta: Object.assign({}, session.meta),
-      //       numDatasets: session.datasets.length,
-      //       cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE], // [null, null],
-      //       experiment: experimentId
-      //     };
-      //
-      //     state.sessionDatasets[sessionId] = [];
-      //
-      //     for (let k = 0; k < session.datasets.length; k++) {
-      //       let dataset = session.datasets[k];
-      //       let datasetId = dataset._id;
-      //
-      //       state.sessionDatasets[sessionId].push(datasetId);
-      //       state.datasets[datasetId] = Object.assign({}, dataset);
-      //       state.datasets[datasetId].session = sessionId;
-      //       state.datasets[datasetId].index = k;
-      //       state.datasets[datasetId].previousDataset =
-      //         k > 0 ? session.datasets[k - 1]._id : null;
-      //       state.datasets[datasetId].nextDataset =
-      //         k < session.datasets.length - 1
-      //           ? session.datasets[k + 1]._id
-      //           : null;
-      //       state.datasets[
-      //         datasetId
-      //       ].firstDatasetInPreviousSession = firstInPrev;
-      //     }
-      //     if (session.datasets.length > 0) {
-      //       firstInPrev = session.datasets[0]._id;
-      //     } else {
-      //       console.error(`${experiment.name}/${session.name} has no datasets`);
-      //     }
-      //   }
-      // }
-      //
-      // // Now iterate through the session tree backwards to build up the links
-      // // to the "firstInNext" datasets.
-      // let firstInNext = null;
-      //
-      // for (let i = sessionTree.length - 1; i >= 0; i--) {
-      //   let experiment = sessionTree[i];
-      //   for (let j = experiment.sessions.length - 1; j >= 0; j--) {
-      //     let session = experiment.sessions[j];
-      //     for (let k = session.datasets.length - 1; k >= 0; k--) {
-      //       let datasetId = session.datasets[k]._id;
-      //       let dataset = state.datasets[datasetId];
-      //       dataset.firstDatasetInNextSession = firstInNext;
-      //     }
-      //     if (session.datasets.length > 0) {
-      //       firstInNext = session.datasets[0]._id;
-      //     } else {
-      //       console.error(
-      //         `${experiment.name}/${session.name}) has no datasets`
-      //       );
-      //     }
-      //   }
-      // }
       state.experimentIds = [];
       state.experiments = {};
       state.experimentSessions = {};
@@ -575,6 +501,8 @@ const store = new Vuex.Store({
             // meta: Object.assign({}, session.meta),
           };
 
+          const nextScan = getNextDataset(experiments, i, j);
+
           for (let k = 0; k < images.length; k += 1) {
             const image = images[k];
             state.sessionDatasets[scan.id].push(image.id);
@@ -585,9 +513,8 @@ const store = new Vuex.Store({
             state.datasets[image.id].index = k;
             state.datasets[image.id].previousDataset = k > 0 ? images[k - 1].id : null;
             state.datasets[image.id].nextDataset = k < images.length - 1 ? images[k + 1].id : null;
-            state.datasets[
-              image.id
-            ].firstDatasetInPreviousSession = firstInPrev;
+            state.datasets[image.id].firstDatasetInPreviousSession = firstInPrev;
+            state.datasets[image.id].firstDatasetInNextSession = nextScan ? nextScan.id : null;
           }
           if (images.length > 0) {
             firstInPrev = images[0].id;
