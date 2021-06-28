@@ -394,6 +394,70 @@ const store = new Vuex.Store({
       dispatch('reset');
       await djangoRest.logout();
     },
+    // load all nifti files into a single experiment + single scan
+    async loadDataset({ state }, files) {
+      state.experimentIds = [];
+      state.experiments = {};
+      state.experimentSessions = {};
+      state.sessions = {};
+      state.sessionDatasets = {};
+      state.datasets = {};
+
+      // TODO: replace with UUID
+      const experimentID = 1;
+      const scanID = 1;
+
+      state.experimentSessions[experimentID] = [];
+      state.experimentIds.push(experimentID);
+      state.experiments[experimentID] = {
+        id: experimentID,
+        name: 'local',
+        index: 0,
+      };
+
+      state.sessionDatasets[scanID] = [];
+      state.experimentSessions[experimentID].push(scanID);
+
+      state.sessions[scanID] = {
+        id: scanID,
+        name: 'local-scan',
+        experiment: experimentID,
+        cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE],
+        numDatasets: files.length,
+        site: 'local-site',
+        notes: [],
+        decisions: [],
+        // folderId: sessionId,
+        // meta: Object.assign({}, session.meta),
+      };
+
+      let prevId = null;
+
+      for (let k = 0; k < files.length; k += 1) {
+        // TODO: replace with UUID
+        const imageID = `scan${k + 1}`;
+        const f = files[k];
+
+        state.sessionDatasets[scanID].push(imageID);
+        state.datasets[imageID] = { ...f };
+        state.datasets[imageID].id = imageID;
+        state.datasets[imageID].session = scanID;
+        state.datasets[imageID].experiment = experimentID;
+        state.datasets[imageID].index = k;
+        state.datasets[imageID].previousDataset = prevId;
+
+        fileCache.set(imageID, Promise.resolve(f));
+
+        if (prevId) {
+          state.datasets[prevId].nextDataset = imageID;
+        }
+
+        prevId = imageID;
+      }
+
+      // last image
+      state.datasets[prevId].nextDataset = null;
+    },
     async loadSession({ commit }, session) {
       commit('resetSession');
 
