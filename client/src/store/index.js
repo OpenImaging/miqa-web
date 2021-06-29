@@ -14,7 +14,7 @@ import ReaderFactory from '../utils/ReaderFactory';
 
 import { proxy } from '../vtk';
 import { getView } from '../vtk/viewManager';
-import girder from '../girder';
+
 import djangoRest from '../django';
 
 const { convertItkToVtkImage } = ITKHelper;
@@ -200,9 +200,8 @@ const store = new Vuex.Store({
     screenshots: [],
     sites: null,
     sessionCachedPercentage: 0,
-    responseInterceptor: null,
     userCheckPeriod: 60000, // In milliseconds
-    remainingSessionTime: 0,
+    sessionStatus: null,
     workerPool: new WorkerPool(poolSize, poolFunction),
     actionTimer: null,
     actionTimeout: false,
@@ -317,9 +316,6 @@ const store = new Vuex.Store({
         return id;
       };
     },
-    remainingSessionTime(state) {
-      return state.remainingSessionTime;
-    },
   },
   mutations: {
     setCurrentImageId(state, imageId) {
@@ -345,12 +341,6 @@ const store = new Vuex.Store({
     removeScreenshot(state, screenshot) {
       state.screenshots.splice(state.screenshots.indexOf(screenshot), 1);
     },
-    setResponseInterceptor(state, interceptor) {
-      state.responseInterceptor = interceptor;
-    },
-    setRemainingSessionTime(state, timeRemaining) {
-      state.remainingSessionTime = timeRemaining;
-    },
     setActionTimeout(state, value) {
       state.actionTimeout = value;
     },
@@ -360,11 +350,6 @@ const store = new Vuex.Store({
       if (sessionTimeoutId !== null) {
         window.clearTimeout(sessionTimeoutId);
         sessionTimeoutId = null;
-      }
-
-      if (state.responseInterceptor !== null) {
-        girder.rest.interceptors.response.eject(state.responseInterceptor);
-        state.responseInterceptor = null;
       }
 
       if (taskRunId >= 0) {
@@ -391,7 +376,7 @@ const store = new Vuex.Store({
       state.screenshots = [];
       state.sites = null;
       state.sessionCachedPercentage = 0;
-      state.remainingSessionTime = 0;
+      state.sessionStatus = null;
 
       fileCache.clear();
       datasetCache.clear();

@@ -20,7 +20,6 @@ import EmailDialog from '@/components/EmailDialog.vue';
 import TimeoutDialog from '@/components/TimeoutDialog.vue';
 import KeyboardShortcutDialog from '@/components/KeyboardShortcutDialog.vue';
 import NavigationTabs from '@/components/NavigationTabs.vue';
-import SessionTimer from '@/components/SessionTimer.vue';
 import { cleanDatasetName } from '@/utils/helper';
 import DataImportExport from '../components/DataImportExport.vue';
 
@@ -38,7 +37,6 @@ export default {
     TimeoutDialog,
     KeyboardShortcutDialog,
     NavigationTabs,
-    SessionTimer,
   },
   inject: ['djangoRest'],
   data: () => ({
@@ -299,7 +297,6 @@ export default {
       <NavbarTitle />
       <NavigationTabs />
       <v-spacer />
-      <SessionTimer />
       <v-btn
         icon
         class="mr-4"
