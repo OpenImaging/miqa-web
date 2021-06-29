@@ -160,11 +160,10 @@ export default {
       console.log(`Caught navigation error (${failureType})`);
     },
     beforeLeaveSession(toDataset) {
-      const { currentDataset } = this;
       if (
-        currentDataset
-        && (!toDataset || toDataset.folderId !== this.currentDataset.folderId)
-        && this.decisionChanged
+        this.currentDataset
+        && toDataset
+        && (this.decisionChanged || this.newNote)
       ) {
         this.unsavedDialog = true;
         return new Promise((resolve) => {
