@@ -54,13 +54,16 @@ if (process.env.NODE_ENV === 'production') {
 djangoRest.setStore(store);
 djangoRest.restoreLogin().then(async () => {
   const user = await djangoRest.me();
+  const [session] = await djangoRest.sessions();
 
   new Vue({
     vuetify,
     router,
     store,
     render: (h) => h(App),
-    provide: { girderRest: girder.rest, djangoRest, user },
+    provide: {
+      djangoRest, user, mainSession: session,
+    },
   })
     .$mount('#app')
     .$snackbarAttach()

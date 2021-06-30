@@ -401,17 +401,12 @@ const store = new Vuex.Store({
       dispatch('reset');
       await djangoRest.logout();
     },
-    async requestCurrentUser({ commit }) {
-      const remainingTime = await girder.rest.get('miqa/sessiontime');
-      commit('setRemainingSessionTime', remainingTime.data);
-    },
-    async loadSessions({ commit }) {
+    async loadSession({ commit }, session) {
       commit('resetSession');
 
       // Build navigation links throughout the dataset to improve performance.
       let firstInPrev = null;
 
-      let [session] = await djangoRest.sessions();
       if (session) {
         // load first available session
         session = await djangoRest.session(session.id);

@@ -12,7 +12,6 @@ export default {
     UserButton,
     NavigationTabs,
   },
-  inject: ['girderRest'],
   methods: {
     ...mapActions(['logout']),
   },
