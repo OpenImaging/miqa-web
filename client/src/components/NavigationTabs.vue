@@ -8,8 +8,9 @@ export default {
   data: () => ({
     GIRDER_URL,
   }),
+  inject: ['user'],
   computed: {
-    ...mapState(['currentDatasetId', 'currentUser']),
+    ...mapState(['currentDatasetId']),
   },
   methods: {
     ...mapMutations(['setDrawer']),
@@ -33,7 +34,7 @@ export default {
       Experiments
     </v-tab>
     <v-tab
-      v-if="currentUser.is_superuser"
+      v-if="user.is_superuser"
       to="/settings"
     >
       <v-icon>settings</v-icon>

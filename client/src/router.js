@@ -1,21 +1,24 @@
 import Vue from 'vue';
 import Router from 'vue-router';
 
-import girder from './girder';
+import django from './django';
 import Settings from './views/Settings.vue';
 import Dataset from './views/Dataset.vue';
 import Login from './views/Login.vue';
 
 Vue.use(Router);
 
-// TODO figure this out
-function beforeEnterAdmin(to, from, next) {
-  if (!girder.rest.user) {
-    next('/login');
-  } else if (!girder.rest.user.admin) {
+async function beforeEnterAdmin(to, from, next) {
+  const user = await django.me();
+  if (user && user.is_superuser) {
+    // logged in && admin
+    next();
+  } else if (user) {
+    // logged in, but not admin
     next('/');
   } else {
-    next();
+    // not logged in
+    next(false);
   }
 }
 

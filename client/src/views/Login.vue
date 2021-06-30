@@ -12,7 +12,6 @@ export default {
 <template>
   <v-container>
     <v-dialog
-      :value="userDialog"
       persistent
       max-width="500px"
     >

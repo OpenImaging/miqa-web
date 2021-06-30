@@ -10,9 +10,9 @@ export default {
     exportpathError: '',
   }),
   async created() {
-    const { data: result } = await this.djangoRest.settings(this.mainSession.id);
-    this.importpath = result.importpath;
-    this.exportpath = result.exportpath;
+    const { importpath, exportpath } = await this.djangoRest.settings(this.mainSession.id);
+    this.importpath = importpath;
+    this.exportpath = exportpath;
   },
   methods: {
     async save() {

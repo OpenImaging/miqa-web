@@ -180,7 +180,6 @@ function getNextDataset(experiments, i, j) {
 }
 
 const initState = {
-  currentUser: null,
   drawer: false,
   experimentIds: [],
   experiments: {},
@@ -209,9 +208,6 @@ const store = new Vuex.Store({
     actionTimeout: false,
   },
   getters: {
-    currentUser(state) {
-      return state.currentUser;
-    },
     currentDataset(state) {
       return state.currentDatasetId
         ? state.datasets[state.currentDatasetId]
@@ -341,9 +337,6 @@ const store = new Vuex.Store({
       // Replace with a new object to trigger a Vuex update
       state.sessions = { ...state.sessions };
       state.sessions[scanId] = scan;
-    },
-    setCurrentUser(state, user) {
-      state.currentUser = user;
     },
     setDrawer(state, value) {
       state.drawer = value;
