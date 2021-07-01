@@ -4,37 +4,21 @@ import { mapActions } from 'vuex';
 export default {
   name: 'DataImportExport',
   components: {},
-  inject: ['djangoRest'],
+  inject: ['djangoRest', 'mainSession'],
   data: () => ({
-    importEnabled: false,
-    exportEnabled: false,
     importing: false,
     importDialog: false,
     importErrorText: '',
     importErrors: false,
   }),
-  async created() {
-    // TODO figure out what this means for Django
-    // var { data: result } = await this.girderRest.get(
-    //   "miqa_setting/import-export-enabled"
-    // );
-    // this.importEnabled = result.import;
-    // this.exportEnabled = result.export;
-    this.importEnabled = true;
-    this.exportEnabled = true;
-  },
   methods: {
-    ...mapActions(['loadSessions']),
+    ...mapActions(['loadSession']),
     async importData() {
       this.importing = true;
       this.importErrorText = '';
       this.importErrors = false;
       try {
-        // TODO: maybe call sessions() globally on app startup
-        const sessions = await this.djangoRest.sessions();
-        const session = sessions[0];
-
-        await this.djangoRest.import(session.id);
+        await this.djangoRest.import(this.mainSession.id);
         this.importing = false;
 
         this.$snackbar({
@@ -42,7 +26,7 @@ export default {
           timeout: 6000,
         });
 
-        this.loadSessions();
+        await this.loadSession(this.mainSession);
       } catch (ex) {
         this.importing = false;
         this.$snackbar({
@@ -53,12 +37,11 @@ export default {
       this.importDialog = false;
     },
     async exportData() {
-      await this.girderRest.get('miqa/data/export');
-      this.$prompt({
-        title: 'Export',
-        text: 'Saved data to file successfully.',
-        positiveButton: 'Ok',
-      });
+      // this.$prompt({
+      //   title: 'Export',
+      //   text: 'Saved data to file successfully.',
+      //   positiveButton: 'Ok',
+      // });
     },
   },
 };
@@ -69,7 +52,6 @@ export default {
     <v-btn
       text
       color="primary"
-      :disabled="!importEnabled"
       @click="importDialog = true"
     >
       Import
@@ -77,7 +59,6 @@ export default {
     <v-btn
       text
       color="primary"
-      :disabled="!exportEnabled"
       @click="exportData"
     >
       Export

@@ -10,7 +10,6 @@ export default {
     SiteTableContactCell,
     SiteTableDisplayNameCell,
   },
-  inject: ['girderRest'],
   computed: {
     ...mapState(['sites']),
     headers: () => [
@@ -46,7 +45,7 @@ export default {
         this.$set(site, 'meta', {});
       }
       this.$set(site.meta, field, value);
-      await this.girderRest.put(`item/${site._id}/metadata`, site.meta);
+      // await this.girderRest.put(`item/${site._id}/metadata`, site.meta);
     },
   },
 };

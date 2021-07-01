@@ -12,10 +12,6 @@ export default {
     JSONConfig,
     SiteConfig,
   },
-  inject: ['girderRest'],
-  computed: {},
-  created() {},
-  methods: {},
 };
 </script>
 

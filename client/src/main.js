@@ -16,7 +16,6 @@ import './vtk/ColorMaps';
 import vMousetrap from './vue-utilities/v-mousetrap';
 import snackbarService from './vue-utilities/snackbar-service';
 import promptService from './vue-utilities/prompt-service';
-import girder from './girder';
 
 import djangoRest from './django';
 
@@ -37,7 +36,6 @@ const vuetify = new Vuetify(vuetifyOptions);
 Vue.use(snackbarService(vuetify));
 Vue.use(promptService(vuetify));
 
-girder.rest = { user: null };
 config.itkModulesPath = STATIC_PATH + config.itkModulesPath;
 
 // console.log(store);
@@ -54,21 +52,22 @@ if (process.env.NODE_ENV === 'production') {
 djangoRest.setStore(store);
 djangoRest.restoreLogin().then(async () => {
   const user = await djangoRest.me();
+  const [session] = await djangoRest.sessions();
 
   new Vue({
     vuetify,
     router,
     store,
     render: (h) => h(App),
-    provide: { girderRest: girder.rest, djangoRest, user },
+    provide: {
+      djangoRest, user, mainSession: session,
+    },
   })
     .$mount('#app')
     .$snackbarAttach()
     .$promptAttach();
 
-  if (user) {
-    store.commit('setCurrentUser', user);
-  } else {
+  if (!user) {
     djangoRest.login();
   }
 });
