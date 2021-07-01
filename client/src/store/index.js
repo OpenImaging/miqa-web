@@ -14,7 +14,7 @@ import ReaderFactory from '../utils/ReaderFactory';
 
 import { proxy } from '../vtk';
 import { getView } from '../vtk/viewManager';
-import girder from '../girder';
+
 import djangoRest from '../django';
 
 const { convertItkToVtkImage } = ITKHelper;
@@ -28,7 +28,6 @@ let readDataQueue = [];
 const poolSize = navigator.hardwareConcurrency / 2 || 2;
 let taskRunId = -1;
 let savedWorker = null;
-let sessionTimeoutId = null;
 
 const actiontime = 1800000; // 30 minute no action timeout
 
@@ -180,41 +179,35 @@ function getNextDataset(experiments, i, j) {
   return nextScan.images[0];
 }
 
+const initState = {
+  drawer: false,
+  experimentIds: [],
+  experiments: {},
+  experimentSessions: {},
+  sessions: {},
+  sessionDatasets: {},
+  datasets: {},
+  proxyManager: null,
+  vtkViews: [],
+  currentDatasetId: null,
+  loadingDataset: false,
+  errorLoadingDataset: false,
+  loadingExperiment: false,
+  currentScreenshot: null,
+  screenshots: [],
+  sites: null,
+  sessionCachedPercentage: 0,
+  sessionStatus: null,
+};
+
 const store = new Vuex.Store({
   state: {
-    currentUser: null,
-    drawer: false,
-    experimentIds: [],
-    experiments: {},
-    experimentSessions: {},
-    sessions: {},
-    sessionDatasets: {},
-    datasets: {},
-    proxyManager: null,
-    vtkViews: [],
-    currentDatasetId: null,
-    loadingDataset: false,
-    errorLoadingDataset: false,
-    loadingExperiment: false,
-    currentScreenshot: null,
-    screenshots: [],
-    sites: null,
-    sessionCachedPercentage: 0,
-    responseInterceptor: null,
-    userCheckPeriod: 60000, // In milliseconds
-    sessionStatus: null,
-    remainingSessionTime: 0,
+    ...initState,
     workerPool: new WorkerPool(poolSize, poolFunction),
     actionTimer: null,
     actionTimeout: false,
   },
   getters: {
-    sessionStatus(state) {
-      return state.sessionStatus;
-    },
-    currentUser(state) {
-      return state.currentUser;
-    },
     currentDataset(state) {
       return state.currentDatasetId
         ? state.datasets[state.currentDatasetId]
@@ -321,24 +314,29 @@ const store = new Vuex.Store({
         return id;
       };
     },
-    remainingSessionTime(state) {
-      return state.remainingSessionTime;
-    },
   },
   mutations: {
+    reset(state) {
+      Vue.set(state, { ...state, ...initState });
+    },
+    resetSession(state) {
+      state.experimentIds = [];
+      state.experiments = {};
+      state.experimentSessions = {};
+      state.sessions = {};
+      state.sessionDatasets = {};
+      state.datasets = {};
+    },
     setCurrentImageId(state, imageId) {
       state.currentDatasetId = imageId;
+    },
+    setImage(state, { imageId, image }) {
+      state.datasets[imageId] = image;
     },
     setScan(state, { scanId, scan }) {
       // Replace with a new object to trigger a Vuex update
       state.sessions = { ...state.sessions };
       state.sessions[scanId] = scan;
-    },
-    setSessionStatus(state, status) {
-      state.sessionStatus = status;
-    },
-    setCurrentUser(state, user) {
-      state.currentUser = user;
     },
     setDrawer(state, value) {
       state.drawer = value;
@@ -352,105 +350,56 @@ const store = new Vuex.Store({
     removeScreenshot(state, screenshot) {
       state.screenshots.splice(state.screenshots.indexOf(screenshot), 1);
     },
-    setResponseInterceptor(state, interceptor) {
-      state.responseInterceptor = interceptor;
-    },
-    setRemainingSessionTime(state, timeRemaining) {
-      state.remainingSessionTime = timeRemaining;
-    },
     setActionTimeout(state, value) {
       state.actionTimeout = value;
+    },
+    setLoadingDataset(state, value) {
+      state.loadingDataset = value;
+    },
+    setErrorLoadingDataset(state, value) {
+      state.errorLoadingDataset = value;
+    },
+    setSites(state, sites) {
+      state.sites = sites;
+    },
+    addSessionDatasets(state, { sid, id }) {
+      state.sessionDatasets[sid].push(id);
+    },
+    addExperimentSessions(state, { eid, sid }) {
+      state.sessionDatasets[sid] = [];
+      state.experimentSessions[eid].push(sid);
+    },
+    addExperiment(state, { id, value }) {
+      state.experimentSessions[id] = [];
+      state.experimentIds.push(id);
+      state.experiments[id] = value;
+    },
+    resetSessionDatasets(state, id) {
+      state.sessionDatasets[id] = [];
     },
   },
   actions: {
     reset({ state, commit }) {
-      if (sessionTimeoutId !== null) {
-        window.clearTimeout(sessionTimeoutId);
-        sessionTimeoutId = null;
-      }
-
-      if (state.responseInterceptor !== null) {
-        girder.rest.interceptors.response.eject(state.responseInterceptor);
-        state.responseInterceptor = null;
-      }
-
       if (taskRunId >= 0) {
         state.workerPool.cancel(taskRunId);
         taskRunId = -1;
       }
 
-      // TODO replace this with a reset mutation
-      state.currentUser = null;
-      state.drawer = false;
-      state.experimentIds = [];
-      state.experiments = {};
-      state.experimentSessions = {};
-      state.sessions = {};
-      state.sessionDatasets = {};
-      state.datasets = {};
-      state.proxyManager = null;
-      state.vtkViews = [];
-      commit('setCurrentImageId', null);
-      state.loadingDataset = false;
-      state.errorLoadingDataset = false;
-      state.loadingExperiment = false;
-      state.currentScreenshot = null;
-      state.screenshots = [];
-      state.sites = null;
-      state.sessionCachedPercentage = 0;
-      state.sessionStatus = null;
-      state.remainingSessionTime = 0;
+      commit('reset');
 
       fileCache.clear();
       datasetCache.clear();
     },
-    async logout({ commit, dispatch }) {
+    async logout({ dispatch }) {
       dispatch('reset');
       await djangoRest.logout();
-      commit('setSessionStatus', 'logout');
     },
-    async requestCurrentUser({ commit }) {
-      const remainingTime = await girder.rest.get('miqa/sessiontime');
-      commit('setRemainingSessionTime', remainingTime.data);
-    },
-    startLoginMonitor() {
-      // startLoginMonitor({ state, commit, dispatch }) {
-      // TODO figure this out
-      // if (state.responseInterceptor === null) {
-      //   state.responseInterceptor = girder.rest.interceptors.response.use(
-      //     response => response,
-      //     error => {
-      //       if (state.currentUser !== null && error.response.status === 401) {
-      //         commit("setSessionStatus", "timeout");
-      //       } else {
-      //         return Promise.reject(error);
-      //       }
-      //     }
-      //   );
-      //
-      //   const checkUser = () => {
-      //     dispatch("requestCurrentUser");
-      //     sessionTimeoutId = window.setTimeout(
-      //       checkUser,
-      //       state.userCheckPeriod
-      //     );
-      //   };
-      //
-      //   checkUser();
-      // }
-    },
-    async loadSessions({ state }) {
-      state.experimentIds = [];
-      state.experiments = {};
-      state.experimentSessions = {};
-      state.sessions = {};
-      state.sessionDatasets = {};
-      state.datasets = {};
+    async loadSession({ commit }, session) {
+      commit('resetSession');
 
       // Build navigation links throughout the dataset to improve performance.
       let firstInPrev = null;
 
-      let [session] = await djangoRest.sessions();
       if (session) {
         // load first available session
         session = await djangoRest.session(session.id);
@@ -466,13 +415,14 @@ const store = new Vuex.Store({
         const experiment = experiments[i];
         // set experimentSessions[experiment.id] before registering the experiment.id
         // so SessionsView doesn't update prematurely
-        state.experimentSessions[experiment.id] = [];
-        state.experimentIds.push(experiment.id);
-        state.experiments[experiment.id] = {
+        commit('addExperiment', {
           id: experiment.id,
-          name: experiment.name,
-          index: i,
-        };
+          value: {
+            id: experiment.id,
+            name: experiment.name,
+            index: i,
+          },
+        });
 
         // Web sessions == Django scans
         // TODO these requests *can* be run in parallel, or collapsed into one XHR
@@ -480,42 +430,47 @@ const store = new Vuex.Store({
         const { scans } = experiment;
         for (let j = 0; j < scans.length; j += 1) {
           const scan = scans[j];
-          state.sessionDatasets[scan.id] = [];
-          state.experimentSessions[experiment.id].push(scan.id);
+          commit('addExperimentSessions', { eid: experiment.id, sid: scan.id });
 
           // Web datasets == Django images
           // TODO these requests *can* be run in parallel, or collapsed into one XHR
           // eslint-disable-next-line no-await-in-loop
           const { images } = scan;
 
-          state.sessions[scan.id] = {
-            id: scan.id,
-            name: scan.scan_type,
-            experiment: experiment.id,
-            cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE],
-            numDatasets: images.length,
-            site: scan.site,
-            notes: scan.notes,
-            decisions: scan.decisions,
-            // folderId: sessionId,
-            // meta: Object.assign({}, session.meta),
-          };
+          commit('setScan', {
+            scanId: scan.id,
+            scan: {
+              id: scan.id,
+              name: scan.scan_type,
+              experiment: experiment.id,
+              cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE],
+              numDatasets: images.length,
+              site: scan.site,
+              notes: scan.notes,
+              decisions: scan.decisions,
+            },
+          });
 
           const nextScan = getNextDataset(experiments, i, j);
 
           for (let k = 0; k < images.length; k += 1) {
             const image = images[k];
-            state.sessionDatasets[scan.id].push(image.id);
-            state.datasets[image.id] = { ...image };
-            state.datasets[image.id].scan = scan.id;
-            state.datasets[image.id].session = scan.id;
-            state.datasets[image.id].experiment = experiment.id;
-            state.datasets[image.id].index = k;
-            state.datasets[image.id].previousDataset = k > 0 ? images[k - 1].id : null;
-            state.datasets[image.id].nextDataset = k < images.length - 1 ? images[k + 1].id : null;
-            state.datasets[image.id].firstDatasetInPreviousSession = firstInPrev;
-            state.datasets[image.id].firstDatasetInNextSession = nextScan ? nextScan.id : null;
+            commit('addSessionDatasets', { sid: scan.id, id: image.id });
+            commit('setImage', {
+              imageId: image.id,
+              image: {
+                ...image,
+                session: scan.id,
+                experiment: experiment.id,
+                index: k,
+                previousDataset: k > 0 ? images[k - 1].id : null,
+                nextDataset: k < images.length - 1 ? images[k + 1].id : null,
+                firstDatasetInPreviousSession: firstInPrev,
+                firstDatasetInNextSession: nextScan ? nextScan.id : null,
+              },
+            });
           }
+
           if (images.length > 0) {
             firstInPrev = images[0].id;
           } else {
@@ -558,15 +513,17 @@ const store = new Vuex.Store({
         dispatch('reloadScan');
       }
     },
-    async swapToDataset({ state, dispatch, getters }, dataset) {
+    async swapToDataset({
+      state, dispatch, getters, commit,
+    }, dataset) {
       if (!dataset) {
         throw new Error("dataset id doesn't exist");
       }
       if (getters.currentDataset === dataset) {
         return;
       }
-      state.loadingDataset = true;
-      state.errorLoadingDataset = false;
+      commit('setLoadingDataset', true);
+      commit('setErrorLoadingDataset', false);
       const oldSession = getters.currentSession;
       const newSession = state.sessions[dataset.session];
       const oldExperiment = getters.currentExperiment
@@ -636,20 +593,19 @@ const store = new Vuex.Store({
         console.log('Caught exception loading next image');
         console.log(err);
         state.vtkViews = [];
-        state.errorLoadingDataset = true;
+        commit('setErrorLoadingDataset', true);
       } finally {
         dispatch('setCurrentImage', dataset.id);
-        state.loadingDataset = false;
+        commit('setLoadingDataset', false);
       }
 
       // If necessary, queue loading scans of new experiment
       // eslint-disable-next-line no-use-before-define
       checkLoadExperiment(oldExperiment, newExperiment);
     },
-    async loadSites({ state }) {
+    async loadSites({ commit }) {
       const sites = await djangoRest.sites();
-      // let { data: sites } = await girder.rest.get("miqa_setting/site");
-      state.sites = sites;
+      commit('setSites', sites);
     },
     startActionTimer({ state, commit }) {
       state.actionTimer = setTimeout(() => {

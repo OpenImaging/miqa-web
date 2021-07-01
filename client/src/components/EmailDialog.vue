@@ -9,7 +9,7 @@ export default {
   components: {
     EmailRecipientCombobox,
   },
-  inject: ['djangoRest'],
+  inject: ['djangoRest', 'user'],
   props: {
     value: {
       type: Boolean,
@@ -39,14 +39,13 @@ export default {
   computed: {
     ...mapState(['screenshots']),
     ...mapGetters([
-      'currentUser',
       'currentDataset',
       'currentSession',
       'siteMap',
     ]),
   },
   watch: {
-    currentUser(value) {
+    user(value) {
       if (value) {
         this.initialize();
       }
@@ -105,8 +104,8 @@ export default {
       this.to = this.toCandidates.map((c) => c.name);
       this.cc = this.ccCandidates.map((c) => c.name);
       this.bcc = this.bccCandidates.map((c) => c.name);
-      if (this.currentUser) {
-        this.bcc.push(this.currentUser.email);
+      if (this.user) {
+        this.bcc.push(this.user.email);
       }
       this.showCC = !!this.cc.length;
       this.showBCC = !!this.bcc.length;

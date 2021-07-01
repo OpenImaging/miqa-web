@@ -20,7 +20,6 @@ import EmailDialog from '@/components/EmailDialog.vue';
 import TimeoutDialog from '@/components/TimeoutDialog.vue';
 import KeyboardShortcutDialog from '@/components/KeyboardShortcutDialog.vue';
 import NavigationTabs from '@/components/NavigationTabs.vue';
-import SessionTimer from '@/components/SessionTimer.vue';
 import { cleanDatasetName } from '@/utils/helper';
 import DataImportExport from '../components/DataImportExport.vue';
 
@@ -38,9 +37,8 @@ export default {
     TimeoutDialog,
     KeyboardShortcutDialog,
     NavigationTabs,
-    SessionTimer,
   },
-  inject: ['djangoRest', 'userLevel'],
+  inject: ['djangoRest', 'mainSession'],
   data: () => ({
     newNote: '',
     decision: null,
@@ -109,7 +107,7 @@ export default {
       this.debouncedDatasetSliderChange,
       30,
     );
-    await Promise.all([this.loadSessions(), this.loadSites()]);
+    await Promise.all([this.loadSession(this.mainSession), this.loadSites()]);
     const { datasetId } = this.$route.params;
     const dataset = this.getDataset(datasetId);
     if (dataset) {
@@ -134,7 +132,7 @@ export default {
   methods: {
     ...mapMutations(['setDrawer']),
     ...mapActions([
-      'loadSessions',
+      'loadSession',
       'reloadScan',
       'loadSites',
       'logout',
@@ -300,7 +298,6 @@ export default {
       <NavbarTitle />
       <NavigationTabs />
       <v-spacer />
-      <SessionTimer />
       <v-btn
         icon
         class="mr-4"
@@ -345,7 +342,7 @@ export default {
         >
           <v-toolbar-title>Experiments</v-toolbar-title>
         </v-toolbar>
-        <DataImportExport v-if="userLevel.value <= 2" />
+        <DataImportExport />
         <SessionsView
           class="mt-1"
           minimal
@@ -628,7 +625,6 @@ export default {
                   </v-col>
                 </v-row>
                 <v-row
-                  v-if="userLevel.value <= 2"
                   class="pb-1 pt-1"
                 >
                   <v-col
@@ -674,7 +670,6 @@ export default {
                   </v-col>
                 </v-row>
                 <v-row
-                  v-if="userLevel.value <= 2"
                   no-gutters
                   justify="space-between"
                   class="pb-1"

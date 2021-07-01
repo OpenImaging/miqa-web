@@ -53,6 +53,13 @@ const djangoClient = new Vue({
       const { data } = await apiClient.get(`/sessions/${sessionId}`);
       return data;
     },
+    async settings(sessionId) {
+      const { data } = await apiClient.get(`/sessions/${sessionId}/settings`);
+      return data;
+    },
+    async setSettings(sessionId, settings) {
+      await apiClient.put(`/sessions/${sessionId}/settings`, settings);
+    },
     async sites() {
       const { data } = await apiClient.get('/sites');
       const { results } = data;
@@ -97,7 +104,7 @@ const djangoClient = new Vue({
     },
     async me() {
       const resp = await apiClient.get('/users/me');
-      return resp.status === 204 ? null : resp.data;
+      return resp.status === 200 ? resp.data : null;
     },
     async sendEmail(email) {
       await apiClient.post('/email', email);

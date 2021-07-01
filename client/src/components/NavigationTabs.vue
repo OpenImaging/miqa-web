@@ -5,10 +5,10 @@ import { GIRDER_URL } from '../constants';
 
 export default {
   name: 'NavigationTabs',
-  inject: ['girderRest', 'userLevel'],
   data: () => ({
     GIRDER_URL,
   }),
+  inject: ['user'],
   computed: {
     ...mapState(['currentDatasetId']),
   },
@@ -34,19 +34,11 @@ export default {
       Experiments
     </v-tab>
     <v-tab
-      v-if="userLevel.value === 0"
+      v-if="user.is_superuser"
       to="/settings"
     >
       <v-icon>settings</v-icon>
       Settings
-    </v-tab>
-    <v-tab
-      v-if="userLevel.value === 0"
-      :href="GIRDER_URL"
-      target="_blank"
-    >
-      <v-icon>open_in_new</v-icon>
-      Girder
     </v-tab>
   </v-tabs>
 </template>

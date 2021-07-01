@@ -1,7 +1,7 @@
 <script>
 export default {
   name: 'JSONConfig',
-  inject: ['girderRest'],
+  inject: ['djangoRest', 'mainSession'],
   data: () => ({
     importpath: '',
     exportpath: '',
@@ -10,9 +10,9 @@ export default {
     exportpathError: '',
   }),
   async created() {
-    const { data: result } = await this.girderRest.get('miqa_setting/datapath');
-    this.importpath = result.importpath;
-    this.exportpath = result.exportpath;
+    const { importpath, exportpath } = await this.djangoRest.settings(this.mainSession.id);
+    this.importpath = importpath;
+    this.exportpath = exportpath;
   },
   methods: {
     async save() {
@@ -20,7 +20,7 @@ export default {
         return;
       }
       try {
-        await this.girderRest.post('miqa_setting/datapath', {
+        await this.djangoRest.setSettings(this.mainSession.id, {
           importpath: this.importpath,
           exportpath: this.exportpath,
         });

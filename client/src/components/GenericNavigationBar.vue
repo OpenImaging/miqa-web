@@ -4,7 +4,6 @@ import { mapActions } from 'vuex';
 import NavbarTitle from '@/components/NavbarTitle.vue';
 import UserButton from '@/components/girder/UserButton.vue';
 import NavigationTabs from '@/components/NavigationTabs.vue';
-import SessionTimer from '@/components/SessionTimer.vue';
 
 export default {
   name: 'GenericNavigationBar',
@@ -12,9 +11,7 @@ export default {
     NavbarTitle,
     UserButton,
     NavigationTabs,
-    SessionTimer,
   },
-  inject: ['girderRest'],
   methods: {
     ...mapActions(['logout']),
   },
@@ -29,7 +26,6 @@ export default {
     <NavbarTitle />
     <NavigationTabs />
     <v-spacer />
-    <SessionTimer />
     <UserButton @user="logout()" />
   </v-app-bar>
 </template>
