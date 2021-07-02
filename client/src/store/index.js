@@ -4,6 +4,7 @@ import Vuex from 'vuex';
 import vtkProxyManager from 'vtk.js/Sources/Proxy/Core/ProxyManager';
 import { InterpolationType } from 'vtk.js/Sources/Rendering/Core/ImageProperty/Constants';
 import _ from 'lodash';
+import { v4 as uuid } from 'uuid';
 
 import '../utils/registerReaders';
 
@@ -403,9 +404,9 @@ const store = new Vuex.Store({
       state.sessionDatasets = {};
       state.datasets = {};
 
-      // TODO: replace with UUID
-      const experimentID = 1;
-      const scanID = 1;
+      // Use a static UUID for the experiment which contains all local scans
+      const experimentID = '276be8dd-aa3c-4ee7-a3a9-581783717a50';
+      const scanID = uuid();
 
       state.experimentSessions[experimentID] = [];
       state.experimentIds.push(experimentID);

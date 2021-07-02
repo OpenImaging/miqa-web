@@ -16,6 +16,7 @@
     "itk": "14.0.0",
     "lodash": "^4.17.21",
     "mousetrap": "scottwittenburg/mousetrap#fix-listener-leak",
+    "uuid": "^3.4.0",
     "vtk.js": "14.16.5",
     "vue": "^2.6.10",
     "vue-async-computed": "^3.5.1",
