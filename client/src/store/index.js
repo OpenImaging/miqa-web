@@ -396,56 +396,61 @@ const store = new Vuex.Store({
       await djangoRest.logout();
     },
     // load all nifti files into a single experiment + single scan
-    async loadLocalDataset({ state }, files) {
-      state.experimentIds = [];
-      state.experiments = {};
-      state.experimentSessions = {};
-      state.sessions = {};
-      state.sessionDatasets = {};
-      state.datasets = {};
-
+    async loadLocalDataset({ state, commit }, files) {
       // Use a static UUID for the experiment which contains all local scans
       const experimentID = '276be8dd-aa3c-4ee7-a3a9-581783717a50';
       const scanID = uuid();
 
-      state.experimentSessions[experimentID] = [];
-      state.experimentIds.push(experimentID);
-      state.experiments[experimentID] = {
-        id: experimentID,
-        name: 'local',
-        index: 0,
-      };
+      if (!(experimentID in state.experiments)) {
+        commit('addExperiment', {
+          id: experimentID,
+          value: {
+            id: experimentID,
+            name: 'LOCAL',
+            index: 0,
+          },
+        });
+      }
 
-      state.sessionDatasets[scanID] = [];
-      state.experimentSessions[experimentID].push(scanID);
+      const numSessions = state.experimentSessions[experimentID].length + 1;
 
-      state.sessions[scanID] = {
-        id: scanID,
-        name: 'local-scan',
-        experiment: experimentID,
-        cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE],
-        numDatasets: files.length,
-        site: 'local-site',
-        notes: [],
-        decisions: [],
-        // folderId: sessionId,
-        // meta: Object.assign({}, session.meta),
-      };
+      commit('addExperimentSessions', { eid: experimentID, sid: scanID });
+      commit('setScan', {
+        scanId: scanID,
+        scan: {
+          id: scanID,
+          name: `local-${numSessions}`,
+          experiment: experimentID,
+          cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE],
+          numDatasets: files.length,
+          site: 'local',
+          notes: [],
+          decisions: [],
+        },
+      });
 
       let prevId = null;
 
       for (let k = 0; k < files.length; k += 1) {
-        // TODO: replace with UUID
-        const imageID = `scan${k + 1}`;
+        const imageID = uuid();
         const f = files[k];
 
-        state.sessionDatasets[scanID].push(imageID);
-        state.datasets[imageID] = { ...f };
-        state.datasets[imageID].id = imageID;
-        state.datasets[imageID].session = scanID;
-        state.datasets[imageID].experiment = experimentID;
-        state.datasets[imageID].index = k;
-        state.datasets[imageID].previousDataset = prevId;
+        commit('addSessionDatasets', { sid: scanID, id: imageID });
+        commit('setImage', {
+          imageId: imageID,
+          image: {
+            ...f,
+            id: imageID,
+            session: scanID,
+            experiment: experimentID,
+            index: k,
+            previousDataset: prevId,
+            // TODO link properly
+            // nextDataset: k < images.length - 1 ? images[k + 1].id : null,
+            // firstDatasetInPreviousSession: firstInPrev,
+            // firstDatasetInNextSession: nextScan ? nextScan.id : null,
+          },
+        });
 
         fileCache.set(imageID, Promise.resolve(f));
 
