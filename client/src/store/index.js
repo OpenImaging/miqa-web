@@ -4,6 +4,7 @@ import Vuex from 'vuex';
 import vtkProxyManager from 'vtk.js/Sources/Proxy/Core/ProxyManager';
 import { InterpolationType } from 'vtk.js/Sources/Rendering/Core/ImageProperty/Constants';
 import _ from 'lodash';
+import { v4 as uuid } from 'uuid';
 
 import '../utils/registerReaders';
 
@@ -394,6 +395,78 @@ const store = new Vuex.Store({
       dispatch('reset');
       await djangoRest.logout();
     },
+    // load all nifti files into a single experiment + single scan
+    async loadLocalDataset({ state, commit, dispatch }, files) {
+      // Use a static UUID for the experiment which contains all local scans
+      const experimentID = '276be8dd-aa3c-4ee7-a3a9-581783717a50';
+      const scanID = uuid();
+
+      if (!(experimentID in state.experiments)) {
+        commit('addExperiment', {
+          id: experimentID,
+          value: {
+            id: experimentID,
+            name: 'LOCAL',
+            index: 0,
+          },
+        });
+      }
+
+      const numSessions = state.experimentSessions[experimentID].length + 1;
+
+      commit('addExperimentSessions', { eid: experimentID, sid: scanID });
+      commit('setScan', {
+        scanId: scanID,
+        scan: {
+          id: scanID,
+          name: `local-${numSessions}`,
+          experiment: experimentID,
+          cumulativeRange: [Number.MAX_VALUE, -Number.MAX_VALUE],
+          numDatasets: files.length,
+          site: 'local',
+          notes: [],
+          decisions: [],
+        },
+      });
+
+      let prevId = null;
+
+      for (let k = 0; k < files.length; k += 1) {
+        const imageID = uuid();
+        const f = files[k];
+
+        commit('addSessionDatasets', { sid: scanID, id: imageID });
+        commit('setImage', {
+          imageId: imageID,
+          image: {
+            ...f,
+            id: imageID,
+            session: scanID,
+            experiment: experimentID,
+            index: k,
+            previousDataset: prevId,
+            // TODO link properly
+            // nextDataset: k < images.length - 1 ? images[k + 1].id : null,
+            // firstDatasetInPreviousSession: firstInPrev,
+            // firstDatasetInNextSession: nextScan ? nextScan.id : null,
+            local: true,
+          },
+        });
+
+        fileCache.set(imageID, Promise.resolve(f));
+
+        if (prevId) {
+          state.datasets[prevId].nextDataset = imageID;
+        }
+
+        prevId = imageID;
+      }
+
+      // last image
+      state.datasets[prevId].nextDataset = null;
+
+      dispatch('swapToDataset', state.datasets[state.sessionDatasets[scanID][0]]);
+    },
     async loadSession({ commit }, session) {
       commit('resetSession');
 
@@ -484,7 +557,8 @@ const store = new Vuex.Store({
     // This would be called reloadSession, but session is being renamed to scan
     async reloadScan({ commit, getters }) {
       const currentImage = getters.currentDataset;
-      if (!currentImage) {
+      // No need to reload if the image doesn't exist or doesn't exist on the server
+      if (!currentImage || currentImage.local) {
         return;
       }
       const scanId = currentImage.session;

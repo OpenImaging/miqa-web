@@ -571,177 +571,179 @@ export default {
                     </v-container>
                   </v-col>
                 </v-row>
-                <v-row>
-                  <v-col
-                    class="pb-1 pt-0"
-                    cols="10"
-                  >
-                    Note history: {{ lastNoteTruncated }}
-                  </v-col>
-                  <v-col
-                    class="pb-1 pt-0"
-                    cols="1"
-                  >
-                    <v-menu
-                      ref="historyMenu"
-                      v-model="showNotePopup"
-                      :close-on-content-click="false"
-                      offset-y
-                      open-on-hover
-                      top
-                      left
+                <template v-if="!currentDataset.local">
+                  <v-row>
+                    <v-col
+                      class="pb-1 pt-0"
+                      cols="10"
                     >
-                      <template v-slot:activator="{ on }">
+                      Note history: {{ lastNoteTruncated }}
+                    </v-col>
+                    <v-col
+                      class="pb-1 pt-0"
+                      cols="1"
+                    >
+                      <v-menu
+                        ref="historyMenu"
+                        v-model="showNotePopup"
+                        :close-on-content-click="false"
+                        offset-y
+                        open-on-hover
+                        top
+                        left
+                      >
+                        <template v-slot:activator="{ on }">
+                          <v-btn
+                            v-mousetrap="{
+                              bind: 'h',
+                              handler: () => (showNotePopup = !showNotePopup)
+                            }"
+                            text
+                            small
+                            icon
+                            :disabled="notes.length < 1"
+                            class="ma-0"
+                            v-on="on"
+                          >
+                            <v-icon>arrow_drop_up</v-icon>
+                          </v-btn>
+                        </template>
+                        <v-card>
+                          <v-list-item
+                            v-for="note in notes"
+                            :key="note.id"
+                          >
+                            <v-list-item-content class="note-history">
+                              <v-list-item-title class="grey--text darken-2">
+                                {{ note.creator.first_name }}
+                                {{ note.creator.last_name }}: {{ note.created }}
+                              </v-list-item-title>
+                              {{ note.note }}
+                            </v-list-item-content>
+                          </v-list-item>
+                        </v-card>
+                      </v-menu>
+                    </v-col>
+                  </v-row>
+                  <v-row
+                    class="pb-1 pt-1"
+                  >
+                    <v-col
+                      cols="11"
+                      class="pb-1 pt-0 pr-0"
+                    >
+                      <v-text-field
+                        ref="note"
+                        v-mousetrap="{ bind: 'n', handler: focusNote }"
+                        v-mousetrap.element="{
+                          bind: 'esc',
+                          handler: () => $refs.note.blur()
+                        }"
+                        class="note-field"
+                        label="Note"
+                        solo
+                        hide-details
+                        :value="newNote"
+                        @input="setNote($event)"
+                      />
+                    </v-col>
+                    <v-col
+                      cols="1"
+                      class="pb-1 pt-0"
+                    >
+                      <v-tooltip top>
+                        <template v-slot:activator="{ on }">
+                          <v-btn
+                            text
+                            icon
+                            small
+                            color="grey"
+                            class="my-0"
+                            :disabled="!decisionChanged"
+                            v-on="on"
+                            @click="reloadScan"
+                          >
+                            <v-icon>undo</v-icon>
+                          </v-btn>
+                        </template>
+                        <span>Revert</span>
+                      </v-tooltip>
+                    </v-col>
+                  </v-row>
+                  <v-row
+                    no-gutters
+                    justify="space-between"
+                    class="pb-1"
+                  >
+                    <v-col
+                      cols="6"
+                      class="pb-1 pt-0"
+                    >
+                      <v-btn-toggle
+                        v-model="decision"
+                        class="buttons"
+                        @change="onDecisionChanged"
+                      >
                         <v-btn
                           v-mousetrap="{
-                            bind: 'h',
-                            handler: () => (showNotePopup = !showNotePopup)
+                            bind: 'b',
+                            handler: () => setDecision('BAD')
                           }"
                           text
                           small
-                          icon
-                          :disabled="notes.length < 1"
-                          class="ma-0"
-                          v-on="on"
+                          value="BAD"
+                          color="red"
+                          :disabled="!newNote && notes.length === 0"
                         >
-                          <v-icon>arrow_drop_up</v-icon>
+                          Bad
                         </v-btn>
-                      </template>
-                      <v-card>
-                        <v-list-item
-                          v-for="note in notes"
-                          :key="note.id"
-                        >
-                          <v-list-item-content class="note-history">
-                            <v-list-item-title class="grey--text darken-2">
-                              {{ note.creator.first_name }}
-                              {{ note.creator.last_name }}: {{ note.created }}
-                            </v-list-item-title>
-                            {{ note.note }}
-                          </v-list-item-content>
-                        </v-list-item>
-                      </v-card>
-                    </v-menu>
-                  </v-col>
-                </v-row>
-                <v-row
-                  class="pb-1 pt-1"
-                >
-                  <v-col
-                    cols="11"
-                    class="pb-1 pt-0 pr-0"
-                  >
-                    <v-text-field
-                      ref="note"
-                      v-mousetrap="{ bind: 'n', handler: focusNote }"
-                      v-mousetrap.element="{
-                        bind: 'esc',
-                        handler: () => $refs.note.blur()
-                      }"
-                      class="note-field"
-                      label="Note"
-                      solo
-                      hide-details
-                      :value="newNote"
-                      @input="setNote($event)"
-                    />
-                  </v-col>
-                  <v-col
-                    cols="1"
-                    class="pb-1 pt-0"
-                  >
-                    <v-tooltip top>
-                      <template v-slot:activator="{ on }">
                         <v-btn
+                          v-mousetrap="{
+                            bind: 'g',
+                            handler: () => setDecision('GOOD')
+                          }"
                           text
-                          icon
                           small
-                          color="grey"
-                          class="my-0"
-                          :disabled="!decisionChanged"
-                          v-on="on"
-                          @click="reloadScan"
+                          value="GOOD"
+                          color="green"
                         >
-                          <v-icon>undo</v-icon>
+                          Good
                         </v-btn>
-                      </template>
-                      <span>Revert</span>
-                    </v-tooltip>
-                  </v-col>
-                </v-row>
-                <v-row
-                  no-gutters
-                  justify="space-between"
-                  class="pb-1"
-                >
-                  <v-col
-                    cols="6"
-                    class="pb-1 pt-0"
-                  >
-                    <v-btn-toggle
-                      v-model="decision"
-                      class="buttons"
-                      @change="onDecisionChanged"
+                        <v-btn
+                          v-mousetrap="{
+                            bind: 'u',
+                            handler: () => setDecision('USABLE_EXTRA')
+                          }"
+                          text
+                          small
+                          value="USABLE_EXTRA"
+                          color="light-green"
+                        >
+                          Extra
+                        </v-btn>
+                      </v-btn-toggle>
+                    </v-col>
+                    <v-col
+                      cols="2"
+                      class="pb-1 pt-0"
                     >
                       <v-btn
-                        v-mousetrap="{
-                          bind: 'b',
-                          handler: () => setDecision('BAD')
-                        }"
-                        text
+                        v-mousetrap="{ bind: 'alt+s', handler: save }"
+                        color="primary"
+                        class="ma-0"
+                        style="height: 36px"
                         small
-                        value="BAD"
-                        color="red"
-                        :disabled="!newNote && notes.length === 0"
+                        :disabled="!decisionChanged && !newNote"
+                        @click="save"
                       >
-                        Bad
+                        Save
+                        <v-icon right>
+                          save
+                        </v-icon>
                       </v-btn>
-                      <v-btn
-                        v-mousetrap="{
-                          bind: 'g',
-                          handler: () => setDecision('GOOD')
-                        }"
-                        text
-                        small
-                        value="GOOD"
-                        color="green"
-                      >
-                        Good
-                      </v-btn>
-                      <v-btn
-                        v-mousetrap="{
-                          bind: 'u',
-                          handler: () => setDecision('USABLE_EXTRA')
-                        }"
-                        text
-                        small
-                        value="USABLE_EXTRA"
-                        color="light-green"
-                      >
-                        Extra
-                      </v-btn>
-                    </v-btn-toggle>
-                  </v-col>
-                  <v-col
-                    cols="2"
-                    class="pb-1 pt-0"
-                  >
-                    <v-btn
-                      v-mousetrap="{ bind: 'alt+s', handler: save }"
-                      color="primary"
-                      class="ma-0"
-                      style="height: 36px"
-                      small
-                      :disabled="!decisionChanged && !newNote"
-                      @click="save"
-                    >
-                      Save
-                      <v-icon right>
-                        save
-                      </v-icon>
-                    </v-btn>
-                  </v-col>
-                </v-row>
+                    </v-col>
+                  </v-row>
+                </template>
               </v-container>
             </v-flex>
             <v-flex

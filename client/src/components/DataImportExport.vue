@@ -12,7 +12,7 @@ export default {
     importErrors: false,
   }),
   methods: {
-    ...mapActions(['loadSession']),
+    ...mapActions(['loadSession', 'loadLocalDataset']),
     async importData() {
       this.importing = true;
       this.importErrorText = '';
@@ -43,6 +43,12 @@ export default {
       //   positiveButton: 'Ok',
       // });
     },
+    activateInput() {
+      this.$refs.load.click();
+    },
+    loadFiles(event) {
+      this.loadLocalDataset(event.target.files);
+    },
   },
 };
 </script>
@@ -63,6 +69,21 @@ export default {
     >
       Export
     </v-btn>
+    <v-btn
+      text
+      color="secondary"
+      @click="activateInput"
+    >
+      Load
+    </v-btn>
+
+    <input
+      ref="load"
+      type="file"
+      multiple
+      style="display: none;"
+      @change="loadFiles"
+    >
     <v-dialog
       v-model="importDialog"
       width="500"
