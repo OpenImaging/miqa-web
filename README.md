@@ -1,3 +1,6 @@
+# This repository is deprecated
+The project is migrating to a different tech stack and can now be found at https://github.com/OpenImaging/miqa.
+
 # MIQA
 MIQA is a medical scan QA/QC application. It takes .nifti files and a CSV file as input, and outputs the same CSV file with additional QA/QC results.
 
