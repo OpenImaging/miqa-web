@@ -396,7 +396,7 @@ const store = new Vuex.Store({
       await djangoRest.logout();
     },
     // load all nifti files into a single experiment + single scan
-    async loadLocalDataset({ state, commit }, files) {
+    async loadLocalDataset({ state, commit, dispatch }, files) {
       // Use a static UUID for the experiment which contains all local scans
       const experimentID = '276be8dd-aa3c-4ee7-a3a9-581783717a50';
       const scanID = uuid();
@@ -463,6 +463,8 @@ const store = new Vuex.Store({
 
       // last image
       state.datasets[prevId].nextDataset = null;
+
+      dispatch('swapToDataset', state.datasets[state.sessionDatasets[scanID][0]]);
     },
     async loadSession({ commit }, session) {
       commit('resetSession');
