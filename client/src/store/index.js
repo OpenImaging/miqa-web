@@ -449,6 +449,7 @@ const store = new Vuex.Store({
             // nextDataset: k < images.length - 1 ? images[k + 1].id : null,
             // firstDatasetInPreviousSession: firstInPrev,
             // firstDatasetInNextSession: nextScan ? nextScan.id : null,
+            local: true,
           },
         });
 
@@ -556,7 +557,8 @@ const store = new Vuex.Store({
     // This would be called reloadSession, but session is being renamed to scan
     async reloadScan({ commit, getters }) {
       const currentImage = getters.currentDataset;
-      if (!currentImage) {
+      // No need to reload if the image doesn't exist or doesn't exist on the server
+      if (!currentImage || currentImage.local) {
         return;
       }
       const scanId = currentImage.session;
