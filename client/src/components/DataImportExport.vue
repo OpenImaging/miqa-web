@@ -12,7 +12,7 @@ export default {
     importErrors: false,
   }),
   methods: {
-    ...mapActions(['loadSession', 'loadDataset']),
+    ...mapActions(['loadSession', 'loadLocalDataset']),
     async importData() {
       this.importing = true;
       this.importErrorText = '';
@@ -47,7 +47,7 @@ export default {
       this.$refs.load.click();
     },
     loadFiles(event) {
-      this.loadDataset(event.target.files);
+      this.loadLocalDataset(event.target.files);
     },
   },
 };

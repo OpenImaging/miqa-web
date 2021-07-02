@@ -395,7 +395,7 @@ const store = new Vuex.Store({
       await djangoRest.logout();
     },
     // load all nifti files into a single experiment + single scan
-    async loadDataset({ state }, files) {
+    async loadLocalDataset({ state }, files) {
       state.experimentIds = [];
       state.experiments = {};
       state.experimentSessions = {};
